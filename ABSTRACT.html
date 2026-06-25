@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZaikaTrack — Project Abstract</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --ink:#1c1510;
+    --ink-soft:#3a2e24;
+    --paper:#f6efe1;
+    --paper-deep:#eee2c8;
+    --card:#fbf6ea;
+    --line:#dccfac;
+    --turmeric:#e2a13a;
+    --turmeric-deep:#b5781f;
+    --terracotta:#c1441e;
+    --terracotta-deep:#8f2f12;
+    --curry:#3f6f4f;
+    --curry-deep:#2b4f37;
+    --clay:#8b5e3c;
+    --cream-ink: #fbf3e3;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .sheet{
+    max-width:920px;
+    margin:0 auto;
+    background:var(--paper);
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;
+    background:
+      radial-gradient(circle at 12% 18%, rgba(226,161,58,0.16) 0, transparent 38%),
+      radial-gradient(circle at 88% 78%, rgba(193,68,30,0.18) 0, transparent 40%),
+      var(--ink);
+    color:var(--cream-ink);
+    padding:64px 56px 48px;
+    overflow:hidden;
+  }
+  .hero::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 14px 14px;
+    opacity:0.5;
+    pointer-events:none;
+  }
+  .eyebrow{
+    position:relative;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11.5px;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:var(--turmeric);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:22px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--terracotta);display:inline-block;}
+  .hero h1{
+    position:relative;
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(40px, 6vw, 64px);
+    line-height:1.02;
+    margin:0 0 6px 0;
+    letter-spacing:-0.5px;
+  }
+  .hero h1 em{
+    font-style:italic;
+    font-weight:500;
+    color:var(--turmeric);
+  }
+  .hero .tagline{
+    position:relative;
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-weight:500;
+    font-size:18px;
+    color:#d9c6a3;
+    max-width:540px;
+    margin:14px 0 30px;
+    line-height:1.5;
+  }
+  .hero .meta-row{
+    position:relative;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .pill{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.5px;
+    padding:6px 12px;
+    border-radius:20px;
+    border:1px solid rgba(255,255,255,0.18);
+    color:#e8dcc2;
+    background:rgba(255,255,255,0.04);
+  }
+  .pill.accent{ border-color:var(--turmeric); color:var(--turmeric); }
+
+  /* ---------- BODY SECTIONS ---------- */
+  .section{
+    padding:48px 56px;
+    border-bottom:1px solid var(--line);
+  }
+  .section.tight{ padding-top:40px; padding-bottom:40px; }
+  .kicker{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:2.5px;
+    text-transform:uppercase;
+    color:var(--terracotta-deep);
+    margin:0 0 10px 0;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .kicker::after{
+    content:"";
+    flex:1;
+    height:1px;
+    background:var(--line);
+  }
+  h2.head{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:30px;
+    letter-spacing:-0.3px;
+    margin:0 0 18px 0;
+    color:var(--ink);
+  }
+  p{
+    font-size:16px;
+    line-height:1.8;
+    margin:0 0 16px 0;
+    color:var(--ink-soft);
+    text-align:justify;
+  }
+  p:last-child{margin-bottom:0;}
+  strong{color:var(--ink);}
+
+  /* ---------- PROBLEM / APPROACH ---------- */
+  .duo{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    margin-top:8px;
+  }
+  .duo-card{
+    border-radius:10px;
+    padding:24px 22px;
+    border:1px solid var(--line);
+    background:var(--card);
+  }
+  .duo-card.problem{ border-top:4px solid var(--terracotta); }
+  .duo-card.approach{ border-top:4px solid var(--curry); }
+  .duo-card h3{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    margin:0 0 12px 0;
+  }
+  .duo-card.problem h3{ color:var(--terracotta-deep); }
+  .duo-card.approach h3{ color:var(--curry-deep); }
+  .duo-card ul{
+    margin:0; padding:0; list-style:none;
+  }
+  .duo-card li{
+    font-size:14.5px;
+    line-height:1.6;
+    color:var(--ink-soft);
+    padding-left:18px;
+    position:relative;
+    margin-bottom:10px;
+  }
+  .duo-card li:last-child{margin-bottom:0;}
+  .duo-card.problem li::before{
+    content:"–"; position:absolute; left:0; color:var(--terracotta);
+  }
+  .duo-card.approach li::before{
+    content:"+"; position:absolute; left:0; color:var(--curry);
+  }
+
+  /* ---------- THALI / STACK DIAGRAM ---------- */
+  .stack-wrap{
+    text-align:center;
+    margin-top:6px;
+  }
+  .stack-wrap svg{ width:100%; max-width:520px; height:auto; }
+  .stack-caption{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11.5px;
+    color:var(--clay);
+    text-align:center;
+    margin-top:6px;
+    letter-spacing:0.3px;
+  }
+
+  /* ---------- FEATURE GRID ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:16px;
+    margin-top:8px;
+  }
+  .feat{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:20px 18px;
+  }
+  .feat .num{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--turmeric-deep);
+    letter-spacing:1px;
+    margin-bottom:10px;
+  }
+  .feat h4{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:16.5px;
+    margin:0 0 8px 0;
+    color:var(--ink);
+  }
+  .feat p{
+    font-size:13.3px;
+    line-height:1.55;
+    margin:0;
+    text-align:left;
+    color:var(--ink-soft);
+  }
+
+  /* ---------- AI CARDS ---------- */
+  .ai-card{
+    display:grid;
+    grid-template-columns:140px 1fr;
+    gap:22px;
+    padding:20px 0;
+    border-bottom:1px dashed var(--line);
+    align-items:start;
+  }
+  .ai-card:last-child{ border-bottom:none; padding-bottom:0; }
+  .ai-tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.5px;
+    color:var(--cream-ink);
+    background:var(--ink);
+    border-radius:6px;
+    padding:6px 9px;
+    display:inline-block;
+    width:fit-content;
+  }
+  .ai-card .route{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--terracotta-deep);
+    margin-top:8px;
+  }
+  .ai-card h4{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:17px;
+    margin:0 0 6px 0;
+  }
+  .ai-card p{ font-size:14px; margin:0; text-align:left; }
+
+  /* ---------- SCHEMA DIAGRAM ---------- */
+  .schema{
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    gap:0;
+    margin-top:10px;
+    flex-wrap:wrap;
+  }
+  .table-box{
+    background:var(--ink);
+    color:var(--cream-ink);
+    border-radius:8px;
+    width:190px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    overflow:hidden;
+    margin:10px;
+  }
+  .table-box .t-head{
+    background:var(--turmeric);
+    color:var(--ink);
+    font-weight:700;
+    padding:8px 10px;
+    letter-spacing:0.5px;
+  }
+  .table-box.auth .t-head{ background:var(--clay); color:#fff; }
+  .table-box ul{ list-style:none; margin:0; padding:10px 10px; }
+  .table-box li{ padding:2px 0; color:#e8dcc2; opacity:0.9; }
+  .table-box li span{ color:var(--turmeric); }
+
+  /* ---------- SCOPE LIST ---------- */
+  .scope{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px 28px;
+    margin-top:8px;
+  }
+  .scope-item{
+    font-size:14px;
+    line-height:1.6;
+    color:var(--ink-soft);
+    padding:12px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .scope-item strong{ display:block; color:var(--ink); font-size:14.5px; margin-bottom:2px; }
+
+  /* ---------- FOOTER ---------- */
+  .footer{
+    padding:40px 56px 50px;
+    background:var(--ink);
+    color:#cdbfa0;
+  }
+  .footer .kw-row{
+    display:flex; flex-wrap:wrap; gap:8px; margin-bottom:28px;
+  }
+  .kw{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    border:1px solid rgba(255,255,255,0.18);
+    border-radius:20px;
+    padding:5px 12px;
+    color:#e8dcc2;
+  }
+  .footer .stack-line{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--turmeric);
+    letter-spacing:0.4px;
+    margin-bottom:18px;
+  }
+  .footer .credit{
+    font-size:12px;
+    color:#8a7a5e;
+    border-top:1px solid rgba(255,255,255,0.1);
+    padding-top:16px;
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+
+  @media (max-width:700px){
+    .hero, .section, .footer{ padding-left:26px; padding-right:26px; }
+    .duo, .grid{ grid-template-columns:1fr; }
+    .ai-card{ grid-template-columns:1fr; }
+  }
+
+  @media print{
+    body{ background:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .hero, .footer{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .sheet{ max-width:100%; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="eyebrow"><span class="dot"></span> Project Abstract · 5th Semester · Loyola Academy</div>
+    <h1>Zaika<em>Track</em></h1>
+    <p class="tagline">An AI-powered nutrition tracker that finally understands what's actually on an Indian plate.</p>
+    <div class="meta-row">
+      <span class="pill accent">Next.js 14</span>
+      <span class="pill">Supabase</span>
+      <span class="pill">Gemini API</span>
+      <span class="pill">Recharts</span>
+      <span class="pill">Tailwind CSS</span>
+      <span class="pill">Vercel</span>
+    </div>
+  </header>
+
+  <!-- ABSTRACT -->
+  <section class="section">
+    <div class="kicker">Abstract</div>
+    <h2 class="head">Built for the thali, not the burger bowl</h2>
+    <p>
+      Most calorie-tracking apps are designed around Western food logic — packaged products, fixed
+      portion sizes, barcode scans. They buckle the moment a meal looks like two rotis, a katori of dal,
+      and a small bowl of sabzi. <strong>ZaikaTrack</strong> is a full-stack web application built
+      specifically around how India eats: a curated desi food database, a fast logging workflow tuned to
+      everyday Indian meals, and a layer of generative AI that can read a free-text meal description and
+      reason about it the way a dietitian familiar with Indian portions would.
+    </p>
+    <p>
+      The application is built on <strong>Next.js</strong> with the App Router, backed by
+      <strong>Supabase</strong> for authentication, Postgres storage, and row-level security, and
+      deployed on <strong>Vercel</strong>. On top of the core tracking experience — search, log, daily
+      and weekly dashboards with <strong>Recharts</strong> visualisations — three Gemini-powered features
+      turn the app from a static logbook into something closer to a conversation: a meal analyser that
+      parses natural-language meal descriptions, a weekly diet review that reads back a user's own data
+      as personalised feedback, and a nutrition chatbot fluent in regional Indian cuisine. Built entirely
+      on free-tier infrastructure, ZaikaTrack is a working demonstration that localisation — not just more
+      data — is what makes a nutrition tool genuinely useful.
+    </p>
+  </section>
+
+  <!-- PROBLEM / APPROACH -->
+  <section class="section tight">
+    <div class="kicker">Problem → Approach</div>
+    <div class="duo">
+      <div class="duo-card problem">
+        <h3>What's missing today</h3>
+        <ul>
+          <li>Global food databases barely cover regional Indian dishes</li>
+          <li>Portion sizes are listed in grams, not "1 roti" or "1 katori"</li>
+          <li>Logging a mixed home-cooked thali is slow and frustrating</li>
+          <li>No feedback loop that understands desi eating patterns</li>
+        </ul>
+      </div>
+      <div class="duo-card approach">
+        <h3>What ZaikaTrack does</h3>
+        <ul>
+          <li>~100 curated Indian dishes across 5 regions &amp; meal types</li>
+          <li>Native serving labels ("1 roti", "1 bowl") alongside grams</li>
+          <li>Free-text meal entry parsed instantly by Gemini AI</li>
+          <li>Weekly AI diet review written against the user's own goal</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SIGNATURE: THALI STACK DIAGRAM -->
+  <section class="section">
+    <div class="kicker">System at a Glance</div>
+    <h2 class="head">The stack, served thali-style</h2>
+    <p style="margin-bottom:20px;">Next.js is the main dish — the framework everything else is served around. Each katori is a layer of the stack doing one job well.</p>
+
+    <div class="stack-wrap">
+      <svg viewBox="0 0 580 580" xmlns="http://www.w3.org/2000/svg">
+        <!-- outer rim -->
+        <circle cx="290" cy="290" r="225" fill="none" stroke="#dccfac" stroke-width="2"/>
+        <circle cx="290" cy="290" r="208" fill="none" stroke="#dccfac" stroke-width="1" stroke-dasharray="3 6"/>
+
+        <!-- radial connectors -->
+        <line x1="290" y1="290" x2="290" y2="130" stroke="#dccfac" stroke-width="1.5"/>
+        <line x1="290" y1="290" x2="442.2" y2="240.6" stroke="#dccfac" stroke-width="1.5"/>
+        <line x1="290" y1="290" x2="384.0" y2="419.4" stroke="#dccfac" stroke-width="1.5"/>
+        <line x1="290" y1="290" x2="196.0" y2="419.4" stroke="#dccfac" stroke-width="1.5"/>
+        <line x1="290" y1="290" x2="137.8" y2="240.6" stroke="#dccfac" stroke-width="1.5"/>
+
+        <!-- center: Next.js -->
+        <circle cx="290" cy="290" r="62" fill="#1c1510"/>
+        <text x="290" y="283" text-anchor="middle" fill="#e2a13a" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700">NEXT.JS</text>
+        <text x="290" y="300" text-anchor="middle" fill="#cdbfa0" font-family="JetBrains Mono, monospace" font-size="9">App Router + API</text>
+
+        <!-- katori: Supabase (top) -->
+        <circle cx="290" cy="130" r="40" fill="#3f6f4f"/>
+        <text x="290" y="134" text-anchor="middle" fill="#f6efe1" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700">DB</text>
+        <text x="290" y="48" text-anchor="middle" fill="#1c1510" font-family="Fraunces, serif" font-weight="600" font-size="14.5">Supabase</text>
+        <text x="290" y="66" text-anchor="middle" fill="#8b5e3c" font-family="JetBrains Mono, monospace" font-size="10">auth · postgres · RLS</text>
+
+        <!-- katori: Gemini (upper right) -->
+        <circle cx="442.2" cy="240.6" r="40" fill="#c1441e"/>
+        <text x="442.2" y="244.6" text-anchor="middle" fill="#f6efe1" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700">AI</text>
+        <text x="505" y="214.3" text-anchor="start" fill="#1c1510" font-family="Fraunces, serif" font-weight="600" font-size="14.5">Gemini API</text>
+        <text x="505" y="232" text-anchor="start" fill="#8b5e3c" font-family="JetBrains Mono, monospace" font-size="10">analyser · review · chat</text>
+
+        <!-- katori: Recharts (lower right) -->
+        <circle cx="384.0" cy="419.4" r="40" fill="#e2a13a"/>
+        <text x="384.0" y="423.4" text-anchor="middle" fill="#1c1510" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700">CHT</text>
+        <text x="416" y="470" text-anchor="start" fill="#1c1510" font-family="Fraunces, serif" font-weight="600" font-size="14.5">Recharts</text>
+        <text x="416" y="488" text-anchor="start" fill="#8b5e3c" font-family="JetBrains Mono, monospace" font-size="10">trends · macros · rings</text>
+
+        <!-- katori: Tailwind (lower left) -->
+        <circle cx="196.0" cy="419.4" r="40" fill="#8b5e3c"/>
+        <text x="196.0" y="423.4" text-anchor="middle" fill="#f6efe1" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700">UI</text>
+        <text x="164" y="470" text-anchor="end" fill="#1c1510" font-family="Fraunces, serif" font-weight="600" font-size="14.5">Tailwind CSS</text>
+        <text x="164" y="488" text-anchor="end" fill="#8b5e3c" font-family="JetBrains Mono, monospace" font-size="10">design system</text>
+
+        <!-- katori: Vercel (upper left) -->
+        <circle cx="137.8" cy="240.6" r="40" fill="#3a2e24"/>
+        <text x="137.8" y="244.6" text-anchor="middle" fill="#f6efe1" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700">CI/CD</text>
+        <text x="75" y="214.3" text-anchor="end" fill="#1c1510" font-family="Fraunces, serif" font-weight="600" font-size="14.5">Vercel</text>
+        <text x="75" y="232" text-anchor="end" fill="#8b5e3c" font-family="JetBrains Mono, monospace" font-size="10">deploy · hosting</text>
+      </svg>
+      <div class="stack-caption">Next.js (the main dish) at the centre — Supabase, Gemini, Recharts, Tailwind &amp; Vercel served around it.</div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section">
+    <div class="kicker">Key Features</div>
+    <h2 class="head">From search bar to full week in review</h2>
+    <div class="grid">
+      <div class="feat">
+        <div class="num">01</div>
+        <h4>Desi Food Database</h4>
+        <p>~100 dishes across breakfast, lunch, dinner, snacks &amp; beverages — searchable by name, tagged by region and category.</p>
+      </div>
+      <div class="feat">
+        <div class="num">02</div>
+        <h4>Auth &amp; Onboarding</h4>
+        <p>Email signup with a guided flow that calculates a personalised calorie goal using the Mifflin-St Jeor formula.</p>
+      </div>
+      <div class="feat">
+        <div class="num">03</div>
+        <h4>Core Tracker</h4>
+        <p>Debounced food search, quantity-aware logging, and a live daily summary grouped by meal type.</p>
+      </div>
+      <div class="feat">
+        <div class="num">04</div>
+        <h4>Weekly Dashboard</h4>
+        <p>Calorie trend lines, macro breakdowns, and meal-distribution charts that turn a week of logs into a story.</p>
+      </div>
+      <div class="feat">
+        <div class="num">05</div>
+        <h4>AI Meal Analyser</h4>
+        <p>Type a meal in plain English — get back Indian-portion-aware calories and macros in seconds.</p>
+      </div>
+      <div class="feat">
+        <div class="num">06</div>
+        <h4>AI Diet Review</h4>
+        <p>A weekly, goal-aware review of what's working and three concrete things to adjust next week.</p>
+      </div>
+      <div class="feat">
+        <div class="num">07</div>
+        <h4>Nutrition Chatbot</h4>
+        <p>Ask "is samosa worse than pakoda?" and get a real answer, grounded in Indian food culture.</p>
+      </div>
+      <div class="feat">
+        <div class="num">08</div>
+        <h4>Row-Level Security</h4>
+        <p>Every profile and log is locked to its owner at the database layer — not just the UI layer.</p>
+      </div>
+      <div class="feat">
+        <div class="num">09</div>
+        <h4>Mobile-First Polish</h4>
+        <p>Bottom nav, 44px tap targets, and skeleton loaders so the app feels finished on a phone, not just a laptop.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI DEEP DIVE -->
+  <section class="section">
+    <div class="kicker">AI Integration · Gemini 1.5 Flash</div>
+    <h2 class="head">Three features, one running theme: understand Indian food</h2>
+
+    <div class="ai-card">
+      <div><span class="ai-tag">5A · TEXT → JSON</span></div>
+      <div>
+        <h4>Meal Analyser</h4>
+        <div class="route">POST /api/ai/analyse-meal</div>
+        <p>A user types "2 rotis with dal and a small bowl of sabzi for lunch." Gemini identifies the dishes, maps them to standard Indian portions, and returns structured calories and macros — ready to add straight to the log.</p>
+      </div>
+    </div>
+
+    <div class="ai-card">
+      <div><span class="ai-tag">5B · DATA → REVIEW</span></div>
+      <div>
+        <h4>Weekly Diet Review</h4>
+        <div class="route">POST /api/ai/diet-review</div>
+        <p>Pulls seven days of logs — average calories, top foods, macro balance — and asks Gemini for a personalised review against the user's stated goal: what's going well, what to fix, three specific next steps.</p>
+      </div>
+    </div>
+
+    <div class="ai-card">
+      <div><span class="ai-tag">5C · MULTI-TURN</span></div>
+      <div>
+        <h4>Nutrition Chatbot</h4>
+        <div class="route">POST /api/ai/chat</div>
+        <p>A conversational assistant scoped to desi food and regional cuisine — protein in paneer, lighter chaat swaps, what a sensible weight-loss breakfast looks like in an Indian kitchen, rate-limited to stay inside the free tier.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCHEMA -->
+  <section class="section">
+    <div class="kicker">Data Model</div>
+    <h2 class="head">Three tables, one shared source of truth</h2>
+    <div class="schema">
+      <div class="table-box auth">
+        <div class="t-head">auth.users</div>
+        <ul><li>managed by <span>Supabase</span></li></ul>
+      </div>
+      <div class="table-box">
+        <div class="t-head">profiles</div>
+        <ul>
+          <li>age, weight_kg, height_cm</li>
+          <li>goal <span>lose · maintain · gain</span></li>
+          <li>daily_calorie_goal</li>
+        </ul>
+      </div>
+      <div class="table-box">
+        <div class="t-head">meal_logs</div>
+        <ul>
+          <li>food_id → foods</li>
+          <li>meal_type, quantity</li>
+          <li>calories_consumed</li>
+        </ul>
+      </div>
+      <div class="table-box">
+        <div class="t-head">foods <span style="color:#8b5e3c">(shared)</span></div>
+        <ul>
+          <li>~100 rows, no owner</li>
+          <li>full nutrient profile</li>
+          <li>region, category</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCOPE -->
+  <section class="section">
+    <div class="kicker">Scope &amp; Known Limitations</div>
+    <h2 class="head">Deliberately small, on purpose</h2>
+    <div class="scope">
+      <div class="scope-item"><strong>Text-only AI input</strong>No photo-based meal logging — Vision API billing was out of scope for a free-tier college project.</div>
+      <div class="scope-item"><strong>~100 dishes at launch</strong>Enough breadth for a convincing demo; the seed script is built to expand later.</div>
+      <div class="scope-item"><strong>Gemini free tier only</strong>Every AI feature is designed to degrade gracefully if rate limits are hit mid-demo.</div>
+      <div class="scope-item"><strong>Email auth only</strong>No Google or OTP login — kept the auth surface area manageable for one semester.</div>
+      <div class="scope-item"><strong>No meal planning</strong>ZaikaTrack tracks and reviews; it doesn't plan future meals — explicitly out of scope.</div>
+      <div class="scope-item"><strong>Single-developer build</strong>Solo project across six phases, from scaffolding to a publicly deployed app on Vercel.</div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="stack-line">next.js · supabase · postgres · gemini-1.5-flash · recharts · tailwindcss · vercel</div>
+    <div class="kw-row">
+      <span class="kw">Nutrition Tracking</span>
+      <span class="kw">Indian Cuisine</span>
+      <span class="kw">Generative AI</span>
+      <span class="kw">Full-Stack Web App</span>
+      <span class="kw">Health Tech</span>
+      <span class="kw">Diet Analysis</span>
+      <span class="kw">Conversational AI</span>
+    </div>
+    <div class="credit">
+      <span>ZaikaTrack v1.0 — solo project, 5th semester</span>
+      <span>Loyola Academy</span>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>
