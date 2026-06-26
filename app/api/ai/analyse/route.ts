@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { geminiModel } from "@/lib/gemini";
+import { getGeminiModel } from "@/lib/gemini";
 
 export const runtime = "nodejs";
 
@@ -32,6 +32,14 @@ RULES:
 
 export async function POST(req: NextRequest) {
   try {
+    const geminiModel = getGeminiModel();
+    if (!geminiModel) {
+      return NextResponse.json(
+        { error: "GEMINI_API_KEY is not configured." },
+        { status: 503 },
+      );
+    }
+
     const body = await req.json() as { meal?: string };
     const meal = body.meal?.trim();
 

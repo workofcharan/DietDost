@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { 
-  Utensils, 
-  Mail, 
-  Lock, 
-  User, 
-  ArrowRight, 
+import {
+  Utensils,
+  Mail,
+  Lock,
+  User,
+  ArrowRight,
   ArrowLeft,
   Activity,
   Calculator,
@@ -38,7 +38,7 @@ export default function SignupPage() {
     const w = parseFloat(weight) || 70;
     const h = parseFloat(height) || 170;
     const a = parseInt(age) || 25;
-    
+
     // BMR calculation
     let bmr = 0;
     if (gender === "male") {
@@ -46,17 +46,17 @@ export default function SignupPage() {
     } else {
       bmr = 10 * w + 6.25 * h - 5 * a - 161;
     }
-    
+
     // TDEE estimate (Light activity factor = 1.375)
     let tdee = Math.round(bmr * 1.375);
-    
+
     // Adjust based on goal
     if (goal === "lose") {
       tdee -= 500; // Calorie deficit
     } else if (goal === "gain") {
       tdee += 300; // Calorie surplus
     }
-    
+
     return Math.max(1200, tdee); // Safe minimum
   };
 
@@ -153,7 +153,7 @@ export default function SignupPage() {
                   <h2 className="text-2xl font-black font-serif text-black dark:text-white mb-1">Create Account</h2>
                   <p className="text-zinc-500 dark:text-zinc-400 text-xs">Let&rsquo;s get started on your health journey</p>
                 </div>
-                
+
                 {/* Name */}
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="signup-name" className="text-xs font-bold text-black dark:text-zinc-300 uppercase tracking-wider">Full Name</label>
@@ -163,7 +163,7 @@ export default function SignupPage() {
                       id="signup-name"
                       type="text"
                       required
-                      placeholder="Rahul Sharma"
+                      placeholder="Sri charan"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 hover:border-black dark:hover:border-white focus:border-brand focus:ring-0 shadow-xs focus:shadow-sm rounded-none text-sm transition-all outline-none text-black dark:text-white placeholder:text-zinc-500"
@@ -180,7 +180,7 @@ export default function SignupPage() {
                       id="signup-email"
                       type="email"
                       required
-                      placeholder="rahul@example.com"
+                      placeholder="charan@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 hover:border-black dark:hover:border-white focus:border-brand focus:ring-0 shadow-xs focus:shadow-sm rounded-none text-sm transition-all outline-none text-black dark:text-white placeholder:text-zinc-500"
@@ -221,22 +221,20 @@ export default function SignupPage() {
                     <button
                       type="button"
                       onClick={() => setGender("male")}
-                      className={`py-3 text-sm font-extrabold rounded-none border-2 transition-all cursor-pointer ${
-                        gender === "male" 
-                          ? "bg-brand border-black text-black shadow-xs translate-x-0 translate-y-0" 
-                          : "bg-white dark:bg-zinc-900 border-black dark:border-zinc-300 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                      }`}
+                      className={`py-3 text-sm font-extrabold rounded-none border-2 transition-all cursor-pointer ${gender === "male"
+                        ? "bg-brand border-black text-black shadow-xs translate-x-0 translate-y-0"
+                        : "bg-white dark:bg-zinc-900 border-black dark:border-zinc-300 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        }`}
                     >
                       Male
                     </button>
                     <button
                       type="button"
                       onClick={() => setGender("female")}
-                      className={`py-3 text-sm font-extrabold rounded-none border-2 transition-all cursor-pointer ${
-                        gender === "female" 
-                          ? "bg-brand border-black text-black shadow-xs translate-x-0 translate-y-0" 
-                          : "bg-white dark:bg-zinc-900 border-black dark:border-zinc-300 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                      }`}
+                      className={`py-3 text-sm font-extrabold rounded-none border-2 transition-all cursor-pointer ${gender === "female"
+                        ? "bg-brand border-black text-black shadow-xs translate-x-0 translate-y-0"
+                        : "bg-white dark:bg-zinc-900 border-black dark:border-zinc-300 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        }`}
                     >
                       Female
                     </button>
@@ -305,11 +303,10 @@ export default function SignupPage() {
                       key={g.id}
                       type="button"
                       onClick={() => setGoal(g.id)}
-                      className={`flex justify-between items-center p-4 border-2 transition-all cursor-pointer rounded-none text-left ${
-                        goal === g.id 
-                          ? "bg-brand-soft border-black text-black shadow-sm translate-x-0 translate-y-0" 
-                          : "bg-white dark:bg-zinc-900 border-black dark:border-zinc-300 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                      }`}
+                      className={`flex justify-between items-center p-4 border-2 transition-all cursor-pointer rounded-none text-left ${goal === g.id
+                        ? "bg-brand-soft border-black text-black shadow-sm translate-x-0 translate-y-0"
+                        : "bg-white dark:bg-zinc-900 border-black dark:border-zinc-300 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        }`}
                     >
                       <div>
                         <p className="font-extrabold text-sm text-black dark:text-white">{g.label}</p>
@@ -355,8 +352,8 @@ export default function SignupPage() {
                 disabled={isLoading}
                 className="flex items-center justify-center gap-2 flex-1 py-3.5 bg-brand hover:bg-brand-strong text-black font-extrabold border-2 border-black dark:border-zinc-300 shadow-sm hover:shadow-md active:shadow-2xs hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 rounded-none disabled:opacity-50 transition-all cursor-pointer"
               >
-                {step === 3 
-                  ? (isLoading ? "Setting Up..." : "Complete Setup") 
+                {step === 3
+                  ? (isLoading ? "Setting Up..." : "Complete Setup")
                   : "Continue"
                 }
                 {step < 3 && <ArrowRight className="h-4 w-4" />}
