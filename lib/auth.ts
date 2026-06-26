@@ -1,3 +1,5 @@
+import type { Session } from "@supabase/supabase-js";
+
 export interface DietDostUser {
   name: string;
   email: string;
@@ -28,17 +30,24 @@ export function clearUser() {
   window.localStorage.removeItem(AUTH_STORAGE_KEY);
 }
 
-export function syncSession(session: any): DietDostUser | null {
-  if (!session || !session.user) {
+type SessionMetadata = Record<string, unknown>;
+
+export function syncSession(session: Session | null | undefined): DietDostUser | null {
+  if (!session?.user) {
     clearUser();
     return null;
   }
-  const meta = session.user.user_metadata || {};
+
+  const meta = (session.user.user_metadata ?? {}) as SessionMetadata;
+  const name = typeof meta.name === "string" ? meta.name : session.user.email?.split("@")[0] || "DietDost User";
+  const goal = typeof meta.goal === "string" ? meta.goal : "maintain";
+  const calorieGoal = typeof meta.calorieGoal === "number" ? meta.calorieGoal : Number(meta.calorieGoal) || 2000;
+
   const user: DietDostUser = {
-    name: meta.name || session.user.email?.split("@")[0] || "DietDost User",
+    name,
     email: session.user.email || "",
-    calorieGoal: Number(meta.calorieGoal) || 2000,
-    goal: meta.goal || "maintain",
+    calorieGoal,
+    goal,
   };
   saveUser(user);
   return user;

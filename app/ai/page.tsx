@@ -46,6 +46,7 @@ export default function AIPage() {
   const [mealText, setMealText] = useState("");
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AiResult | null>(null);
+  const [analyseError, setAnalyseError] = useState<string | null>(null);
 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     { sender: "ai", text: "Namaste! 🙏 I'm your DietDost AI nutritionist. I specialise in Indian food, regional cuisines, and practical dietary advice. Ask me anything!" },
@@ -58,41 +59,50 @@ export default function AIPage() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, isChatLoading]);
 
-  const handleAnalyse = () => {
+  const handleAnalyse = async () => {
     if (mealText.trim() === "") return;
     setIsAnalysing(true);
     setAnalysisResult(null);
-    setTimeout(() => {
-      setAnalysisResult({
-        dishes: [
-          { name: "Masala Dosa", calories: 350, protein: 7, carbs: 54, fat: 12, servingLabel: "1 plate" },
-          { name: "Coconut Chutney", calories: 80, protein: 1, carbs: 6, fat: 6, servingLabel: "2 tbsp" },
-          { name: "Sambar", calories: 70, protein: 4, carbs: 10, fat: 2, servingLabel: "1 cup" },
-        ],
-        total_calories: 500, total_protein: 12, total_carbs: 70, total_fat: 20,
-        notes: "A well-rounded South Indian breakfast. High carbs are from the rice-lentil crepe — perfectly fine if portion-controlled. The sambar provides additional plant-based protein and fibre.",
+    setAnalyseError(null);
+    try {
+      const res = await fetch("/api/ai/analyse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ meal: mealText }),
       });
+      const data = await res.json() as AiResult & { error?: string };
+      if (!res.ok || data.error) throw new Error(data.error || "Analysis failed");
+      setAnalysisResult(data);
+    } catch (err: unknown) {
+      setAnalyseError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
       setIsAnalysing(false);
-    }, 1800);
+    }
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (chatInput.trim() === "" || isChatLoading) return;
-    const userText = chatInput;
-    setChatMessages(prev => [...prev, { sender: "user", text: userText }]);
+    const userText = chatInput.trim();
+    const updatedMessages: ChatMessage[] = [...chatMessages, { sender: "user", text: userText }];
+    setChatMessages(updatedMessages);
     setChatInput("");
     setIsChatLoading(true);
-    setTimeout(() => {
-      const q = userText.toLowerCase();
-      let reply = "That's a great question about Indian nutrition! Let me check my knowledge...";
-      if (q.includes("samosa") || q.includes("pakoda")) reply = "Both are fried snacks, but Samosa (~260 kcal each) typically has more calories than Pakoda (~220 kcal per 100g) due to its pastry shell. For a healthier swap, try roasted chana or makhana!";
-      else if (q.includes("paneer") && q.includes("protein")) reply = "100g of full-fat paneer contains about 18-20g of protein! That makes it one of the best vegetarian protein sources. However, it also has ~20g of fat. Opt for low-fat paneer to halve the fat while keeping similar protein.";
-      else if (q.includes("breakfast") && (q.includes("protein") || q.includes("weight loss"))) reply = "Top high-protein Indian breakfasts:\n1. Moong Dal Chilla + curd dip (~18g protein)\n2. Paneer Bhurji + 1 whole wheat roti (~22g)\n3. Besan Cheela with vegetables (~15g)\nAll under 400 kcal!";
-      else if (q.includes("ghee")) reply = "Ghee in moderation is fine! 1 tsp (5g) per day is generally safe for healthy adults. It's rich in fat-soluble vitamins and has a high smoke point. Avoid if you have high LDL cholesterol.";
-      setChatMessages(prev => [...prev, { sender: "ai", text: reply }]);
+    try {
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: chatMessages, query: userText }),
+      });
+      const data = await res.json() as { reply?: string; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error || "Chat failed");
+      setChatMessages(prev => [...prev, { sender: "ai", text: data.reply ?? "" }]);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Something went wrong.";
+      setChatMessages(prev => [...prev, { sender: "ai", text: `⚠️ Error: ${msg}` }]);
+    } finally {
       setIsChatLoading(false);
-    }, 1200);
+    }
   };
 
   return (
@@ -119,7 +129,7 @@ export default function AIPage() {
           {([
             { key: "analyser", label: "Meal Analyser", Icon: Brain },
             { key: "chat", label: "Nutrition Chatbot", Icon: MessageSquare },
-          ] as const).map(({ key, label, Icon }, idx) => (
+          ] as const).map(({ key, label, Icon }) => (
             <button key={key} onClick={() => setActiveTab(key)}
               className={`flex items-center gap-2 px-6 py-3 text-sm font-extrabold border-r-2 last:border-r-0 border-black dark:border-zinc-300 transition-all cursor-pointer rounded-none ${
                 activeTab === key
@@ -196,9 +206,20 @@ export default function AIPage() {
                 <div className="flex-1 flex flex-col items-center justify-center bg-brand-softer border-2 border-brand-strong p-12 text-center gap-5 rounded-none min-h-[300px] animate-fade-in">
                   <div className="w-16 h-16 border-4 border-black border-t-brand animate-spin-slow rounded-full" />
                   <div>
-                    <p className="text-black font-extrabold">Reading your meal description...</p>
+                    <p className="text-black font-extrabold">Asking Gemini AI...</p>
                     <p className="text-xs text-black/60 font-bold mt-1">Mapping to Indian portion standards</p>
                   </div>
+                </div>
+              )}
+
+              {analyseError && !isAnalysing && (
+                <div className="flex flex-col gap-3 p-5 bg-danger-soft border-2 border-danger animate-fade-in rounded-none min-h-[120px] justify-center">
+                  <p className="font-extrabold text-danger">⚠ Analysis Failed</p>
+                  <p className="text-xs text-danger font-medium">{analyseError}</p>
+                  <button onClick={() => setAnalyseError(null)}
+                    className="self-start text-xs font-extrabold border-2 border-danger text-danger px-3 py-1 hover:bg-danger hover:text-white transition-all cursor-pointer rounded-none">
+                    Dismiss
+                  </button>
                 </div>
               )}
 

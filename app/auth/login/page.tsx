@@ -35,8 +35,9 @@ export default function LoginPage() {
         syncSession(data.session);
         router.push("/dashboard");
       }
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setError(message);
       setIsLoading(false);
     }
   };

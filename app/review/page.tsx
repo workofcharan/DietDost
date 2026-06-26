@@ -67,14 +67,52 @@ export default function WeeklyReviewPage() {
   const maxCalDay = [...WEEKLY_DATA].sort((a, b) => b.calories - a.calories)[0];
   const maxVal = Math.max(...WEEKLY_DATA.map((d) => d.calories), CALORIE_GOAL * 1.2);
 
-  const handleGetAiReview = () => {
+  const handleGetAiReview = async () => {
     setAiReviewLoading(true);
     setAiReview(null);
-    setTimeout(() => {
-      setAiReview(`**What's Going Well:**\nYour protein intake is trending positively — averaging ${avgProtein}g per day this week, close to your ${PROTEIN_GOAL}g goal. Days like Thursday show excellent balance across all macronutrients.\n\n**What to Improve:**\nYour calorie intake is inconsistent, ranging from 1,780 to 2,350 kcal. Weekend days (especially Saturday) tend to spike significantly — likely due to social eating patterns. Try planning a lighter Sunday to compensate.\n\n**3 Specific Suggestions for Next Week:**\n1. Add a mid-morning protein snack (e.g., 1 boiled egg or a small bowl of sprouts) on weekdays to reduce hunger-driven evening overeating.\n2. On high-calorie days like Saturday, opt for lighter Indian options: grilled tandoori items over fried, tawa vegetables over creamy curries.\n3. Hit your 75g protein target consistently — consider adding a glass of buttermilk (chaas) or a handful of roasted chana as a regular snack.`);
+
+    // Build a structured data summary to send to the AI
+    const weekSummary = WEEKLY_DATA.map(d =>
+      `${d.label} (${d.date}): ${d.calories} kcal, ${d.protein}g protein, ${d.carbs}g carbs, ${d.fat}g fat`
+    ).join("\n");
+
+    const prompt = `You are DietDost, a nutrition coach specialised in Indian food. Analyse this user's weekly food log and give a concise, actionable review.
+
+Weekly data (calorie goal: ${CALORIE_GOAL} kcal/day, protein goal: ${PROTEIN_GOAL}g/day):
+${weekSummary}
+
+Averages: ${avgCalories} kcal/day, ${avgProtein}g protein/day
+Days on target: ${daysOnTarget}/7
+
+Write a review using EXACTLY this format (no markdown code blocks, just plain text with these exact headings):
+**What's Going Well:**
+[2-3 positive observations]
+
+**What to Improve:**
+[2-3 specific weaknesses with Indian diet context]
+
+**3 Specific Suggestions for Next Week:**
+1. [Actionable tip with Indian food examples]
+2. [Actionable tip with Indian food examples]
+3. [Actionable tip with Indian food examples]`;
+
+    try {
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [], query: prompt }),
+      });
+      const data = await res.json() as { reply?: string; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error || "Review failed");
+      setAiReview(data.reply ?? "");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to generate AI review.";
+      setAiReview(`**Error:**\n${msg}`);
+    } finally {
       setAiReviewLoading(false);
-    }, 2200);
+    }
   };
+
 
   const STAT_CARDS = [
     {

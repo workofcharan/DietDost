@@ -98,8 +98,9 @@ export default function SignupPage() {
           setError("Check your email for a confirmation link to complete registration!");
           setIsLoading(false);
         }
-      } catch (err: any) {
-        setError(err.message || "An unexpected error occurred during signup.");
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "An unexpected error occurred during signup.";
+        setError(message);
         setIsLoading(false);
       }
     }

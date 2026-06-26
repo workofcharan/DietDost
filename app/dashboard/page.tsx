@@ -153,19 +153,40 @@ export default function Dashboard() {
 
   const handleDeleteLog = (id: string) => setLogs(logs.filter(l => l.id !== id));
 
-  const handleAiAnalyse = () => {
+  const handleAiAnalyse = async () => {
     if (aiInput.trim() === "") return;
-    setIsAnalysing(true); setAiResult(null);
-    setTimeout(() => {
-      setAiResult({
-        dishes: [
-          { name: "Masala Dosa", quantity: 1, servingLabel: "1 plate", calories: 350, protein: 7, carbs: 54, fat: 12 },
-          { name: "Filter Coffee", quantity: 1, servingLabel: "1 cup", calories: 85, protein: 2.5, carbs: 10, fat: 3.5 }
-        ],
-        calories: 435, protein: 9.5, carbs: 64, fat: 15.5
+    setIsAnalysing(true);
+    setAiResult(null);
+    try {
+      const res = await fetch("/api/ai/analyse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ meal: aiInput }),
       });
+      const data = await res.json() as {
+        dishes: AiDish[];
+        total_calories: number;
+        total_protein: number;
+        total_carbs: number;
+        total_fat: number;
+        error?: string;
+      };
+      if (!res.ok || data.error) throw new Error(data.error || "Analysis failed");
+      // Map the API response shape to our internal AiResult shape
+      setAiResult({
+        dishes: data.dishes.map(d => ({ ...d, quantity: 1 })),
+        calories: data.total_calories,
+        protein: data.total_protein,
+        carbs: data.total_carbs,
+        fat: data.total_fat,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "AI analysis failed";
+      // Show error as a temporary AI result with an error note
+      console.error("[Dashboard AI Analyse]:", msg);
+    } finally {
       setIsAnalysing(false);
-    }, 1800);
+    }
   };
 
   const handleAddAiLogs = () => {
@@ -178,18 +199,25 @@ export default function Dashboard() {
     setAiResult(null); setAiInput("");
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (chatInput.trim() === "") return;
-    const userMsg = chatInput;
+    const userMsg = chatInput.trim();
     setChatMessages(prev => [...prev, { sender: "user", text: userMsg }]);
     setChatInput("");
-    setTimeout(() => {
-      let aiText = "I can help with that! Let me look up the best options for you.";
-      if (userMsg.toLowerCase().includes("samosa")) aiText = "A fried Samosa has ~260 kcal and 14g of fat. For a healthier swap try boiled chana chaat (~120 kcal) or roasted makhana (~90 kcal)!";
-      else if (userMsg.toLowerCase().includes("protein") && userMsg.toLowerCase().includes("paneer")) aiText = "100g of raw paneer has ~18-20g of protein and ~20g fat. Low-fat paneer halves the fat with similar protein!";
-      setChatMessages(prev => [...prev, { sender: "ai", text: aiText }]);
-    }, 1000);
+    try {
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: chatMessages, query: userMsg }),
+      });
+      const data = await res.json() as { reply?: string; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error || "Chat failed");
+      setChatMessages(prev => [...prev, { sender: "ai", text: data.reply ?? "" }]);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Something went wrong.";
+      setChatMessages(prev => [...prev, { sender: "ai", text: `⚠️ ${msg}` }]);
+    }
   };
 
   if (!mounted) {
