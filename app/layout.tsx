@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Fraunces, JetBrains_Mono, Outfit } from "next/font/google";
+import { Archivo_Black, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
-const outfit = Outfit({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-outfit",
+  variable: "--font-sans",
   display: "swap",
 });
 
-const fraunces = Fraunces({
+const archivoBlack = Archivo_Black({
   subsets: ["latin"],
-  variable: "--font-fraunces",
-  style: ["normal", "italic"],
+  weight: "400",
+  variable: "--font-head",
   display: "swap",
 });
 
@@ -35,10 +35,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${outfit.variable} ${fraunces.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+      <body className={`${spaceGrotesk.variable} ${archivoBlack.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         <ThemeProvider>
           <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(245,158,11,0.08),transparent_360px)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.035)_1px,transparent_1px),linear-gradient(rgba(0,0,0,0.035)_1px,transparent_1px)] bg-[size:32px_32px] dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px)]" />
             <div className="relative z-10">{children}</div>
           </div>
         </ThemeProvider>

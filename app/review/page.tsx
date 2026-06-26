@@ -10,6 +10,7 @@ import {
   Target,
   Flame,
   AlertCircle,
+  CheckCircle,
 } from "lucide-react";
 
 interface DayData {
@@ -34,6 +35,27 @@ const WEEKLY_DATA: DayData[] = [
 const CALORIE_GOAL = 2000;
 const PROTEIN_GOAL = 75;
 
+function getDayStatus(day: DayData) {
+  if (day.calories === 0) return "empty";
+  if (day.calories > CALORIE_GOAL + 150) return "over";
+  if (day.calories < CALORIE_GOAL - 300) return "under";
+  return "on-target";
+}
+
+const STATUS_BAR: Record<string, string> = {
+  "on-target": "bg-brand",
+  "over": "bg-danger",
+  "under": "bg-zinc-400 dark:bg-zinc-600",
+  "empty": "bg-zinc-200 dark:bg-zinc-800",
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  "on-target": "text-brand-strong dark:text-brand",
+  "over": "text-danger",
+  "under": "text-zinc-500",
+  "empty": "text-zinc-400",
+};
+
 export default function WeeklyReviewPage() {
   const [aiReviewLoading, setAiReviewLoading] = useState(false);
   const [aiReview, setAiReview] = useState<string | null>(null);
@@ -49,180 +71,159 @@ export default function WeeklyReviewPage() {
     setAiReviewLoading(true);
     setAiReview(null);
     setTimeout(() => {
-      setAiReview(`**What's Going Well:**
-Your protein intake is trending positively — averaging ${avgProtein}g per day this week, close to your ${PROTEIN_GOAL}g goal. Days like Thursday show excellent balance across all macronutrients.
-
-**What to Improve:**
-Your calorie intake is inconsistent, ranging from 1,780 to 2,350 kcal. Weekend days (especially Saturday) tend to spike significantly — likely due to social eating patterns. Try planning a lighter Sunday to compensate.
-
-**3 Specific Suggestions for Next Week:**
-1. Add a mid-morning protein snack (e.g., 1 boiled egg or a small bowl of sprouts) on weekdays to reduce hunger-driven evening overeating.
-2. On high-calorie days like Saturday, opt for lighter Indian options: grilled tandoori items over fried, tawa vegetables over creamy curries.
-3. Hit your 75g protein target consistently — consider adding a glass of buttermilk (chaas) or a handful of roasted chana as a regular snack.`);
+      setAiReview(`**What's Going Well:**\nYour protein intake is trending positively — averaging ${avgProtein}g per day this week, close to your ${PROTEIN_GOAL}g goal. Days like Thursday show excellent balance across all macronutrients.\n\n**What to Improve:**\nYour calorie intake is inconsistent, ranging from 1,780 to 2,350 kcal. Weekend days (especially Saturday) tend to spike significantly — likely due to social eating patterns. Try planning a lighter Sunday to compensate.\n\n**3 Specific Suggestions for Next Week:**\n1. Add a mid-morning protein snack (e.g., 1 boiled egg or a small bowl of sprouts) on weekdays to reduce hunger-driven evening overeating.\n2. On high-calorie days like Saturday, opt for lighter Indian options: grilled tandoori items over fried, tawa vegetables over creamy curries.\n3. Hit your 75g protein target consistently — consider adding a glass of buttermilk (chaas) or a handful of roasted chana as a regular snack.`);
       setAiReviewLoading(false);
     }, 2200);
   };
 
+  const STAT_CARDS = [
+    {
+      label: "Avg Daily Calories", value: `${avgCalories}`, unit: "kcal / day",
+      Icon: Flame, bg: "bg-brand", textColor: "text-black", border: "border-black"
+    },
+    {
+      label: "Days On Target", value: `${daysOnTarget}/7`, unit: "days this week",
+      Icon: Target, bg: "bg-success", textColor: "text-white", border: "border-black"
+    },
+    {
+      label: "Avg Protein", value: `${avgProtein}g`, unit: "per day",
+      Icon: Award, bg: "bg-black dark:bg-white", textColor: "text-white dark:text-black", border: "border-black dark:border-white"
+    },
+    {
+      label: "Highest Cal Day", value: maxCalDay.label, unit: `${maxCalDay.calories} kcal`,
+      Icon: TrendingUp, bg: "bg-danger", textColor: "text-white", border: "border-black"
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-white font-sans pb-24 md:pb-12">
+    <div className="min-h-screen bg-background text-foreground font-sans pb-24 md:pb-12 page-enter selection:bg-brand selection:text-black">
       <Navbar />
 
       <main className="max-w-6xl mx-auto px-4 md:px-8 pt-24 md:pt-28 flex flex-col gap-8">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-in">
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase text-amber-500 tracking-wider">
+            <div className="flex items-center gap-2 text-xs font-black uppercase text-brand-strong dark:text-brand tracking-widest">
               <BarChart3 className="h-4 w-4" />
               Weekly Overview
             </div>
-            <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight">
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight text-black dark:text-white">
               This Week&rsquo;s Diet Review
             </h1>
-            <p className="text-zinc-400 text-sm">Jun 20 – Jun 26, 2026 · Personal calorie goal: {CALORIE_GOAL} kcal / day</p>
+            <p className="text-zinc-600 dark:text-zinc-400 text-sm">
+              Jun 20 – Jun 26, 2026 &middot; Personal calorie goal: <strong className="text-black dark:text-white">{CALORIE_GOAL} kcal / day</strong>
+            </p>
           </div>
           <button
             onClick={handleGetAiReview}
             disabled={aiReviewLoading}
-            className="flex items-center gap-2 px-5 py-3 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold rounded-xl transition-all text-sm cursor-pointer disabled:opacity-60 shrink-0"
+            className="flex items-center gap-2 px-6 py-3.5 bg-brand hover:bg-brand-strong text-black font-extrabold border-2 border-black shadow-sm hover:shadow-md active:shadow-2xs hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 rounded-none transition-all text-sm cursor-pointer disabled:opacity-60 shrink-0"
           >
-            <Sparkles className="h-4 w-4 fill-zinc-950" />
-            {aiReviewLoading ? "Generating AI Review..." : "Get AI Diet Review"}
+            {aiReviewLoading ? (
+              <><div className="w-4 h-4 border-2 border-black border-t-transparent animate-spin-slow rounded-full" />Generating AI Review...</>
+            ) : (
+              <><Sparkles className="h-4 w-4" />Get AI Diet Review</>
+            )}
           </button>
         </div>
 
         {/* Summary Stat Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: "Avg Daily Calories", value: `${avgCalories}`, unit: "kcal", icon: Flame, color: "text-amber-500", bg: "bg-amber-500/10" },
-            { label: "Days On Target", value: `${daysOnTarget}/7`, unit: "days", icon: Target, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-            { label: "Avg Protein", value: `${avgProtein}g`, unit: "/ day", icon: Award, color: "text-blue-400", bg: "bg-blue-500/10" },
-            { label: "Highest Cal Day", value: maxCalDay.label, unit: `${maxCalDay.calories} kcal`, icon: TrendingUp, color: "text-red-400", bg: "bg-red-500/10" },
-          ].map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <div key={stat.label} className="glass-card rounded-2xl p-5 border border-zinc-800 flex flex-col gap-3">
-                <div className={`w-9 h-9 rounded-lg ${stat.bg} flex items-center justify-center ${stat.color}`}>
-                  <Icon className="h-4.5 w-4.5" />
-                </div>
-                <div>
-                  <p className={`text-2xl font-bold font-mono ${stat.color}`}>{stat.value}</p>
-                  <p className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider mt-0.5">{stat.unit}</p>
-                  <p className="text-xs text-zinc-400 mt-1">{stat.label}</p>
-                </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+          {STAT_CARDS.map(({ label, value, unit, Icon, bg, textColor, border }) => (
+            <div key={label}
+              className={`${bg} border-2 ${border} shadow-md p-5 flex flex-col gap-3 hover:shadow-lg hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 transition-all rounded-none cursor-default`}>
+              <Icon className={`h-5 w-5 ${textColor}`} />
+              <div>
+                <p className={`text-2xl font-black font-mono ${textColor}`}>{value}</p>
+                <p className={`text-[10px] font-black uppercase tracking-wider mt-0.5 ${textColor} opacity-70`}>{unit}</p>
+                <p className={`text-xs font-bold mt-1 ${textColor} opacity-80`}>{label}</p>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
 
         {/* Bar Chart */}
-        <div className="glass-card rounded-3xl p-6 border border-zinc-800 flex flex-col gap-5">
+        <div className="bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 shadow-md p-6 flex flex-col gap-5 animate-fade-in rounded-none" style={{ animationDelay: "0.2s" }}>
           <div className="flex items-center justify-between">
-            <h2 className="font-serif font-bold text-lg">Calorie Trend · 7 Days</h2>
-            <div className="flex items-center gap-4 text-[10px] font-semibold uppercase tracking-wider">
-              <span className="flex items-center gap-1.5 text-amber-500">
-                <span className="w-3 h-1.5 rounded-full bg-amber-500 inline-block"></span>
-                Consumed
-              </span>
-              <span className="flex items-center gap-1.5 text-zinc-500">
-                <span className="w-3 h-0.5 bg-zinc-500 inline-block" style={{ borderTop: "2px dashed" }}></span>
-                Goal
-              </span>
+            <h2 className="font-black text-lg text-black dark:text-white">Calorie Trend · 7 Days</h2>
+            <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-wider">
+              {[
+                { color: "bg-brand", label: "On Target" },
+                { color: "bg-danger", label: "Over Goal" },
+                { color: "bg-zinc-400 dark:bg-zinc-600", label: "Under Goal" },
+              ].map(({ color, label }) => (
+                <span key={label} className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                  <span className={`w-2.5 h-2.5 inline-block border border-black/20 ${color}`} />{label}
+                </span>
+              ))}
             </div>
           </div>
 
-          <div className="flex items-end gap-3 h-48 relative px-2">
+          <div className="flex items-end gap-3 h-52 relative px-2">
             {/* Goal line */}
             <div
-              className="absolute left-0 right-0 border-t border-dashed border-zinc-600 pointer-events-none"
+              className="absolute left-0 right-0 border-t-2 border-dashed border-black/30 dark:border-zinc-500 pointer-events-none"
               style={{ bottom: `${(CALORIE_GOAL / maxVal) * 100}%` }}
             >
-              <span className="absolute right-0 -top-4 text-[9px] text-zinc-500 font-mono bg-zinc-950 px-1">
+              <span className="absolute right-0 -top-5 text-[9px] text-black dark:text-zinc-400 font-black bg-white dark:bg-zinc-900 px-1 border border-black/20 dark:border-zinc-600">
                 Goal {CALORIE_GOAL}
               </span>
             </div>
 
-            {WEEKLY_DATA.map((day) => {
+            {WEEKLY_DATA.map((day, i) => {
               const heightPercent = (day.calories / maxVal) * 100;
-              const isOverGoal = day.calories > CALORIE_GOAL + 150;
-              const isUnder = day.calories < CALORIE_GOAL - 300;
+              const status = getDayStatus(day);
               const isToday = day.label === "Sun";
-
               return (
-                <div key={day.label} className="flex-1 flex flex-col items-center gap-2">
-                  {/* Value label */}
-                  <span className="text-[9px] font-mono text-zinc-500">
-                    {day.calories > 0 ? day.calories : "-"}
-                  </span>
-
-                  {/* Bar */}
+                <div key={day.label} className="flex-1 flex flex-col items-center gap-1.5" style={{ animationDelay: `${i * 60}ms` }}>
+                  <span className="text-[9px] font-black font-mono text-zinc-500">{day.calories > 0 ? day.calories : "-"}</span>
                   <div className="w-full flex-1 flex items-end">
                     <div
-                      className={`w-full rounded-t-lg transition-all duration-700 ${
-                        isToday
-                          ? "bg-amber-500/40 border border-amber-500/40"
-                          : isOverGoal
-                          ? "bg-red-500/70"
-                          : isUnder
-                          ? "bg-zinc-700"
-                          : "bg-amber-500"
-                      }`}
-                      style={{ height: `${heightPercent}%` }}
-                    ></div>
+                      className={`w-full border-2 border-black transition-all duration-700 ${STATUS_BAR[status]} ${isToday ? "opacity-50" : ""}`}
+                      style={{ height: `${Math.max(heightPercent, 2)}%` }}
+                    />
                   </div>
-
-                  {/* Day label */}
-                  <span className={`text-[10px] font-bold ${isToday ? "text-amber-500" : "text-zinc-500"}`}>
-                    {day.label}
-                  </span>
+                  <span className={`text-[10px] font-black ${isToday ? "text-brand-strong dark:text-brand" : "text-zinc-500"}`}>{day.label}</span>
                 </div>
               );
             })}
           </div>
-
-          <div className="flex gap-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-600 border-t border-zinc-900 pt-3">
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-amber-500"></span>On Target</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-500/70"></span>Over Goal</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-zinc-700"></span>Under Goal</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-amber-500/40 border border-amber-500/40"></span>Today</span>
-          </div>
         </div>
 
-        {/* Per-Day Breakdown */}
-        <div className="glass-card rounded-3xl p-6 border border-zinc-800 flex flex-col gap-4">
-          <h2 className="font-serif font-bold text-lg">Daily Breakdown</h2>
-          <div className="flex flex-col gap-3">
+        {/* Daily Breakdown */}
+        <div className="bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 shadow-md p-6 flex flex-col gap-4 animate-fade-in rounded-none" style={{ animationDelay: "0.25s" }}>
+          <h2 className="font-black text-lg text-black dark:text-white">Daily Breakdown</h2>
+          <div className="flex flex-col gap-2">
             {WEEKLY_DATA.map((day) => {
-              const isOverGoal = day.calories > CALORIE_GOAL + 150;
+              const status = getDayStatus(day);
+              const isOver = status === "over";
+              const isOnTarget = status === "on-target";
               return (
-                <div
-                  key={day.label}
-                  className="flex items-center gap-4 p-3.5 rounded-xl bg-zinc-900/40 border border-zinc-800 hover:border-zinc-800 transition-all"
-                >
-                  <div className="w-10 text-center">
-                    <p className="text-xs font-bold text-zinc-300">{day.label}</p>
-                    <p className="text-[9px] text-zinc-600">{day.date.slice(5)}</p>
+                <div key={day.label}
+                  className={`flex items-center gap-4 p-3.5 border-2 border-black dark:border-zinc-600 hover:shadow-xs hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all rounded-none ${
+                    isOver ? "bg-danger-soft" : isOnTarget ? "bg-brand-softer" : "bg-zinc-50 dark:bg-zinc-800"
+                  }`}>
+                  <div className="w-10 text-center shrink-0">
+                    <p className="text-xs font-black text-black dark:text-white">{day.label}</p>
+                    <p className="text-[9px] text-zinc-500 font-bold">{day.date.slice(5)}</p>
                   </div>
 
-                  {/* Calorie progress bar */}
-                  <div className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="flex-1 macro-bar border-black/20 dark:border-zinc-700">
                     <div
-                      className={`h-full rounded-full transition-all duration-500 ${isOverGoal ? "bg-red-500" : "bg-amber-500"}`}
+                      className={`macro-bar-fill ${STATUS_BAR[status]}`}
                       style={{ width: `${Math.min(100, (day.calories / (CALORIE_GOAL * 1.3)) * 100)}%` }}
-                    ></div>
+                    />
                   </div>
 
-                  <div className="flex items-center gap-4 text-[10px] font-mono shrink-0">
-                    <span className={`font-bold ${isOverGoal ? "text-red-400" : "text-zinc-200"}`}>
-                      {day.calories} kcal
-                    </span>
-                    <span className="text-amber-500">{day.protein}g P</span>
-                    <span className="text-zinc-500">{day.carbs}g C</span>
-                    <span className="text-red-400/70">{day.fat}g F</span>
+                  <div className="flex items-center gap-3 text-[10px] font-mono shrink-0">
+                    <span className={`font-black ${STATUS_LABEL[status]}`}>{day.calories > 0 ? `${day.calories} kcal` : "—"}</span>
+                    <span className="text-brand-strong dark:text-brand font-bold">{day.protein}g P</span>
+                    <span className="text-zinc-500 hidden sm:block">{day.carbs}g C</span>
+                    <span className="text-danger hidden sm:block">{day.fat}g F</span>
                   </div>
 
-                  {isOverGoal && (
-                    <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
-                  )}
+                  {isOver && <AlertCircle className="h-4 w-4 text-danger shrink-0" />}
+                  {isOnTarget && <CheckCircle className="h-4 w-4 text-success shrink-0" />}
                 </div>
               );
             })}
@@ -230,33 +231,48 @@ Your calorie intake is inconsistent, ranging from 1,780 to 2,350 kcal. Weekend d
         </div>
 
         {/* AI Review */}
+        {aiReviewLoading && (
+          <div className="bg-brand-softer border-2 border-brand-strong p-8 flex flex-col items-center gap-4 text-center animate-fade-in rounded-none">
+            <div className="w-12 h-12 border-4 border-black border-t-brand animate-spin-slow rounded-full" />
+            <div>
+              <p className="font-black text-black">Generating AI Diet Review...</p>
+              <p className="text-xs text-black/60 font-bold mt-1">Analysing your week&rsquo;s data</p>
+            </div>
+          </div>
+        )}
+
         {aiReview && (
-          <div className="glass-card rounded-3xl p-6 border border-amber-500/20 flex flex-col gap-4 animate-slide-up">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
-                <Sparkles className="h-4 w-4" />
+          <div className="bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 shadow-md p-6 flex flex-col gap-4 animate-bounce-in rounded-none relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-brand" />
+            <div className="flex items-center gap-3 mt-1">
+              <div className="w-9 h-9 border-2 border-black bg-brand flex items-center justify-center text-black rounded-none">
+                <Sparkles className="h-5 w-5" />
               </div>
-              <h3 className="font-serif font-bold text-lg">AI Diet Review</h3>
-              <span className="ml-auto text-[10px] text-zinc-500 font-mono">Powered by Gemini 1.5 Flash</span>
+              <div>
+                <h3 className="font-black text-base text-black dark:text-white">AI Diet Review</h3>
+                <p className="text-[10px] text-zinc-500 font-bold">Generated from your week&rsquo;s logs</p>
+              </div>
             </div>
 
-            <div className="flex flex-col gap-4 text-sm leading-relaxed text-zinc-300">
+            <div className="flex flex-col gap-4 text-sm leading-relaxed">
               {aiReview.split("\n\n").map((block, i) => {
                 const isHeading = block.startsWith("**");
                 if (isHeading) {
                   const [heading, ...rest] = block.split("\n");
                   return (
-                    <div key={i}>
-                      <p className="font-bold text-white mb-1">{heading.replace(/\*\*/g, "")}</p>
+                    <div key={i} className={`p-4 border-2 border-black rounded-none ${
+                      i === 0 ? "bg-success-soft border-success" : i === 1 ? "bg-warning-soft border-warning" : "bg-brand-softer border-brand-strong"
+                    }`}>
+                      <p className={`font-black text-sm mb-2 ${
+                        i === 0 ? "text-success-strong" : i === 1 ? "text-warning-strong dark:text-warning" : "text-brand-strong"
+                      }`}>{heading.replace(/\*\*/g, "")}</p>
                       {rest.map((line, j) => (
-                        <p key={j} className="text-zinc-400 text-xs leading-relaxed">
-                          {line}
-                        </p>
+                        <p key={j} className="text-black dark:text-zinc-800 text-xs leading-relaxed font-medium">{line}</p>
                       ))}
                     </div>
                   );
                 }
-                return <p key={i} className="text-zinc-400 text-xs leading-relaxed">{block}</p>;
+                return <p key={i} className="text-zinc-600 dark:text-zinc-400 text-xs leading-relaxed">{block}</p>;
               })}
             </div>
           </div>
