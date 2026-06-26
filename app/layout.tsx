@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Fraunces, Outfit, JetBrains_Mono } from "next/font/google";
+import { Fraunces, JetBrains_Mono, Outfit } from "next/font/google";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -22,8 +23,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DietDost — AI-Powered Indian Food Calorie & Nutrition Tracker",
-  description: "An AI-powered nutrition tracker that finally understands what's actually on an Indian plate. Seeded database, free-text logging, chatbot, and weekly reviews.",
+  title: "DietDost - AI-Powered Indian Food Calorie & Nutrition Tracker",
+  description:
+    "An AI-powered nutrition tracker that finally understands what's actually on an Indian plate. Seeded database, free-text logging, chatbot, and weekly reviews.",
 };
 
 export default function RootLayout({
@@ -32,19 +34,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body
-        className={`${outfit.variable} ${fraunces.variable} ${jetbrainsMono.variable} font-sans antialiased bg-black text-white`}
-      >
-        <div className="relative min-h-screen overflow-hidden">
-          {/* Radial Glowing Background Orbs */}
-          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-amber-500/10 blur-[120px] pointer-events-none animate-pulse-slow"></div>
-          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-500/10 blur-[120px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '-4s' }}></div>
-          
-          <div className="relative z-10">
-            {children}
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${outfit.variable} ${fraunces.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+        <ThemeProvider>
+          <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(245,158,11,0.08),transparent_360px)]" />
+            <div className="relative z-10">{children}</div>
           </div>
-        </div>
+        </ThemeProvider>
       </body>
     </html>
   );

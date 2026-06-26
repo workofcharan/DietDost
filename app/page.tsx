@@ -109,7 +109,7 @@ export default function Home() {
                 className={`absolute w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 z-30 cursor-pointer ${
                   hoveredDish === dish.name 
                     ? "bg-amber-500 text-zinc-950 scale-125 border-4 border-amber-500/20" 
-                    : "bg-zinc-850 hover:bg-zinc-800 text-zinc-300 border border-zinc-750"
+                    : "bg-zinc-800 hover:bg-zinc-800 text-zinc-300 border border-zinc-700"
                 }`}
                 style={{ top: dish.y, left: dish.x }}
               >
@@ -169,8 +169,8 @@ export default function Home() {
             <p className="text-zinc-400 text-sm leading-relaxed">
               Over 100 regional Indian recipes (Dosa, Rajma, Poha, Biryani) with localized serving measurements. Log items in terms of bowls or counts easily.
             </p>
-            <Link href="/food" className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-500 mt-6 group-hover:underline">
-              Search Food Database <ChevronRight className="h-3 w-3" />
+            <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-500 mt-6 group-hover:underline">
+              Log from the food database <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
 
@@ -219,7 +219,7 @@ export default function Home() {
             <h3 className="text-2xl md:text-4xl font-bold font-serif text-white">
               Chat with an Expert in Desi Nutrition
             </h3>
-            <p className="text-zinc-450 text-sm md:text-base leading-relaxed">
+            <p className="text-zinc-400 text-sm md:text-base leading-relaxed">
               Need a healthier replacement for samosas? Curious about the protein content of paneer vs tofu? Our chatbot is tuned to regional Indian culinary habits and suggests custom local alternatives.
             </p>
           </div>

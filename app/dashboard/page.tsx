@@ -289,7 +289,7 @@ export default function Dashboard() {
                     <span className="text-amber-500">{Math.round(totals.protein)}g</span> / {proteinGoal}g
                   </span>
                 </div>
-                <div className="h-2.5 bg-zinc-900 rounded-full overflow-hidden border border-zinc-850">
+                <div className="h-2.5 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
                   <div 
                     className="h-full bg-amber-500 transition-all duration-500" 
                     style={{ width: `${Math.min(100, (totals.protein / proteinGoal) * 100)}%` }}
@@ -305,7 +305,7 @@ export default function Dashboard() {
                     <span className="text-white">{Math.round(totals.carbs)}g</span> / {carbsGoal}g
                   </span>
                 </div>
-                <div className="h-2.5 bg-zinc-900 rounded-full overflow-hidden border border-zinc-850">
+                <div className="h-2.5 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
                   <div 
                     className="h-full bg-zinc-300 transition-all duration-500" 
                     style={{ width: `${Math.min(100, (totals.carbs / carbsGoal) * 100)}%` }}
@@ -321,7 +321,7 @@ export default function Dashboard() {
                     <span className="text-red-500">{Math.round(totals.fat)}g</span> / {fatGoal}g
                   </span>
                 </div>
-                <div className="h-2.5 bg-zinc-900 rounded-full overflow-hidden border border-zinc-850">
+                <div className="h-2.5 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
                   <div 
                     className="h-full bg-red-600 transition-all duration-500" 
                     style={{ width: `${Math.min(100, (totals.fat / fatGoal) * 100)}%` }}
@@ -341,7 +341,7 @@ export default function Dashboard() {
                 placeholder="Search breakfast, lunch, snack, desserts (e.g. Dosa, Paratha, Samosa)..."
                 value={searchQuery}
                 onChange={handleSearch}
-                className="w-full pl-12 pr-4 py-3.5 bg-zinc-900/60 border border-zinc-800 hover:border-zinc-700 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-2xl text-sm transition-all outline-none text-white placeholder:text-zinc-550"
+                className="w-full pl-12 pr-4 py-3.5 bg-zinc-900/60 border border-zinc-800 hover:border-zinc-700 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-2xl text-sm transition-all outline-none text-white placeholder:text-zinc-500"
               />
             </div>
 
@@ -387,7 +387,7 @@ export default function Dashboard() {
                 <form onSubmit={handleAddLog} className="flex flex-col gap-5">
                   {/* Select Meal Type */}
                   <div className="flex flex-col gap-1.5 text-left">
-                    <label className="text-xs font-bold text-zinc-450 uppercase tracking-wider">Meal Category</label>
+                    <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Meal Category</label>
                     <div className="grid grid-cols-4 gap-2">
                       {["Breakfast", "Lunch", "Dinner", "Snack"].map((m) => (
                         <button
@@ -397,7 +397,7 @@ export default function Dashboard() {
                           className={`py-2 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
                             selectedMealType === m 
                               ? "bg-amber-500/10 border-amber-500 text-amber-500" 
-                              : "bg-zinc-900 border-zinc-850 text-zinc-400 hover:border-zinc-800"
+                              : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-800"
                           }`}
                         >
                           {m}
@@ -408,7 +408,7 @@ export default function Dashboard() {
 
                   {/* Quantity adjustment */}
                   <div className="flex flex-col gap-1.5 text-left">
-                    <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-zinc-450">
+                    <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-zinc-400">
                       <span>Quantity</span>
                       <span className="font-mono text-amber-500 text-sm">{quantity}x ({selectedFood.servingLabel})</span>
                     </div>
@@ -431,23 +431,23 @@ export default function Dashboard() {
                   </div>
 
                   {/* Live Nutrition Summary Box */}
-                  <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-850 text-left">
+                  <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 text-left">
                     <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wider mb-2">Estimated Nutrients</p>
                     <div className="grid grid-cols-4 gap-2 text-center">
                       <div>
-                        <p className="text-xs text-zinc-455 font-semibold">Calories</p>
+                        <p className="text-xs text-zinc-500 font-semibold">Calories</p>
                         <p className="text-sm font-bold text-white font-mono mt-0.5">{Math.round(selectedFood.calories * quantity)} kcal</p>
                       </div>
                       <div>
-                        <p className="text-xs text-zinc-455 font-semibold">Protein</p>
+                        <p className="text-xs text-zinc-500 font-semibold">Protein</p>
                         <p className="text-sm font-bold text-amber-500 font-mono mt-0.5">{Math.round(selectedFood.protein * quantity)}g</p>
                       </div>
                       <div>
-                        <p className="text-xs text-zinc-455 font-semibold">Carbs</p>
+                        <p className="text-xs text-zinc-500 font-semibold">Carbs</p>
                         <p className="text-sm font-bold text-zinc-300 font-mono mt-0.5">{Math.round(selectedFood.carbs * quantity)}g</p>
                       </div>
                       <div>
-                        <p className="text-xs text-zinc-455 font-semibold">Fats</p>
+                        <p className="text-xs text-zinc-500 font-semibold">Fats</p>
                         <p className="text-sm font-bold text-red-500 font-mono mt-0.5">{Math.round(selectedFood.fat * quantity)}g</p>
                       </div>
                     </div>
@@ -487,7 +487,7 @@ export default function Dashboard() {
                         {categoryLogs.map((log) => (
                           <div
                             key={log.id}
-                            className="flex justify-between items-center p-4 rounded-2xl bg-zinc-900/50 border border-zinc-850 hover:border-zinc-800 transition-all group"
+                            className="flex justify-between items-center p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800 hover:border-zinc-800 transition-all group"
                           >
                             <div className="flex-1">
                               <p className="font-semibold text-sm text-zinc-100">{log.name}</p>
@@ -543,7 +543,7 @@ export default function Dashboard() {
                 value={aiInput}
                 onChange={(e) => setAiInput(e.target.value)}
                 rows={3}
-                className="w-full p-3.5 bg-zinc-900/60 border border-zinc-850 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-xs transition-all outline-none text-white placeholder:text-zinc-600 resize-none leading-relaxed"
+                className="w-full p-3.5 bg-zinc-900/60 border border-zinc-800 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-xs transition-all outline-none text-white placeholder:text-zinc-600 resize-none leading-relaxed"
               />
 
               <button
@@ -558,7 +558,7 @@ export default function Dashboard() {
 
             {/* AI Results */}
             {aiResult && (
-              <div className="mt-3 p-4 rounded-xl bg-zinc-900 border border-zinc-850 flex flex-col gap-3 animate-slide-up">
+              <div className="mt-3 p-4 rounded-xl bg-zinc-900 border border-zinc-800 flex flex-col gap-3 animate-slide-up">
                 <div className="flex justify-between items-center text-xs border-b border-zinc-800 pb-2">
                   <span className="font-semibold text-zinc-400">Detected Items</span>
                   <span className="font-mono text-amber-500 font-bold">{aiResult.calories} kcal</span>
@@ -593,15 +593,15 @@ export default function Dashboard() {
             </div>
 
             <div className="flex flex-col gap-3 mt-1 text-xs">
-              <div className="flex justify-between items-center p-2.5 rounded-lg bg-zinc-900/30 border border-zinc-850">
+              <div className="flex justify-between items-center p-2.5 rounded-lg bg-zinc-900/30 border border-zinc-800">
                 <span className="text-zinc-400">Target Diet Goal</span>
                 <span className="font-semibold text-amber-500">Weight Maintenance</span>
               </div>
-              <div className="flex justify-between items-center p-2.5 rounded-lg bg-zinc-900/30 border border-zinc-850">
+              <div className="flex justify-between items-center p-2.5 rounded-lg bg-zinc-900/30 border border-zinc-800">
                 <span className="text-zinc-400">TDEE Calculated</span>
                 <span className="font-semibold text-zinc-200">2,000 kcal / day</span>
               </div>
-              <div className="flex justify-between items-center p-2.5 rounded-lg bg-zinc-900/30 border border-zinc-850">
+              <div className="flex justify-between items-center p-2.5 rounded-lg bg-zinc-900/30 border border-zinc-800">
                 <span className="text-zinc-400">Food Logging Ratio</span>
                 <span className="font-semibold text-emerald-500">5/5 complete</span>
               </div>
@@ -623,10 +623,10 @@ export default function Dashboard() {
       {/* CHATBOT DRAWER SIDE PANEL */}
       {isChatOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end animate-fade-in">
-          <div className="w-full max-w-md h-full bg-zinc-950 border-l border-zinc-850 flex flex-col justify-between shadow-2xl relative">
+          <div className="w-full max-w-md h-full bg-zinc-950 border-l border-zinc-800 flex flex-col justify-between shadow-2xl relative">
             
             {/* Header */}
-            <div className="p-4 border-b border-zinc-850 flex items-center justify-between bg-zinc-900/40">
+            <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/40">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
                   <Sparkles className="h-4.5 w-4.5 fill-amber-500" />
@@ -641,7 +641,7 @@ export default function Dashboard() {
               </div>
               <button
                 onClick={() => setIsChatOpen(false)}
-                className="text-zinc-450 hover:text-white transition-colors p-1"
+                className="text-zinc-400 hover:text-white transition-colors p-1"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -655,7 +655,7 @@ export default function Dashboard() {
                   className={`flex flex-col max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed text-left ${
                     msg.sender === "user"
                       ? "bg-amber-500 text-zinc-950 self-end rounded-tr-none font-medium"
-                      : "bg-zinc-900 text-zinc-200 self-start rounded-tl-none border border-zinc-850"
+                      : "bg-zinc-900 text-zinc-200 self-start rounded-tl-none border border-zinc-800"
                   }`}
                 >
                   <p>{msg.text}</p>
@@ -664,13 +664,13 @@ export default function Dashboard() {
             </div>
 
             {/* Chat Input area */}
-            <form onSubmit={handleSendMessage} className="p-4 border-t border-zinc-850 bg-zinc-900/20 flex gap-2">
+            <form onSubmit={handleSendMessage} className="p-4 border-t border-zinc-800 bg-zinc-900/20 flex gap-2">
               <input
                 type="text"
                 placeholder="Ask about samosas, biryani swap, paneer protein..."
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                className="flex-1 px-4 py-3 bg-zinc-900 border border-zinc-800 hover:border-zinc-750 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-xs transition-all outline-none text-white placeholder:text-zinc-600"
+                className="flex-1 px-4 py-3 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-xs transition-all outline-none text-white placeholder:text-zinc-600"
               />
               <button
                 type="submit"

@@ -52,7 +52,7 @@ export default function LoginPage() {
                   placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-zinc-900/50 border border-zinc-850 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm transition-all outline-none text-white placeholder:text-zinc-600"
+                  className="w-full pl-10 pr-4 py-3 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm transition-all outline-none text-white placeholder:text-zinc-600"
                 />
               </div>
             </div>
@@ -68,7 +68,7 @@ export default function LoginPage() {
                   placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-zinc-900/50 border border-zinc-850 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm transition-all outline-none text-white placeholder:text-zinc-600"
+                  className="w-full pl-10 pr-4 py-3 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm transition-all outline-none text-white placeholder:text-zinc-600"
                 />
               </div>
             </div>

@@ -116,14 +116,14 @@ export default function SignupPage() {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Full Name</label>
                   <div className="relative">
-                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-505" />
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                     <input
                       type="text"
                       required
                       placeholder="Rahul Sharma"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-zinc-900/50 border border-zinc-850 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm transition-all outline-none text-white placeholder:text-zinc-650"
+                      className="w-full pl-10 pr-4 py-3 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm transition-all outline-none text-white placeholder:text-zinc-600"
                     />
                   </div>
                 </div>
@@ -132,14 +132,14 @@ export default function SignupPage() {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Email Address</label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-505" />
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                     <input
                       type="email"
                       required
                       placeholder="rahul@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-zinc-900/50 border border-zinc-850 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm transition-all outline-none text-white placeholder:text-zinc-655"
+                      className="w-full pl-10 pr-4 py-3 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm transition-all outline-none text-white placeholder:text-zinc-600"
                     />
                   </div>
                 </div>
@@ -148,14 +148,14 @@ export default function SignupPage() {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-505" />
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                     <input
                       type="password"
                       required
                       placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-zinc-900/50 border border-zinc-850 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm transition-all outline-none text-white placeholder:text-zinc-655"
+                      className="w-full pl-10 pr-4 py-3 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm transition-all outline-none text-white placeholder:text-zinc-600"
                     />
                   </div>
                 </div>
@@ -179,7 +179,7 @@ export default function SignupPage() {
                       className={`py-3.5 text-sm font-semibold rounded-xl border transition-all cursor-pointer ${
                         gender === "male" 
                           ? "bg-amber-500/10 border-amber-500 text-amber-500" 
-                          : "bg-zinc-900/50 border-zinc-850 text-zinc-400 hover:border-zinc-800"
+                          : "bg-zinc-900/50 border-zinc-800 text-zinc-400 hover:border-zinc-800"
                       }`}
                     >
                       Male
@@ -190,7 +190,7 @@ export default function SignupPage() {
                       className={`py-3.5 text-sm font-semibold rounded-xl border transition-all cursor-pointer ${
                         gender === "female" 
                           ? "bg-amber-500/10 border-amber-500 text-amber-500" 
-                          : "bg-zinc-900/50 border-zinc-850 text-zinc-400 hover:border-zinc-800"
+                          : "bg-zinc-900/50 border-zinc-800 text-zinc-400 hover:border-zinc-800"
                       }`}
                     >
                       Female
@@ -208,7 +208,7 @@ export default function SignupPage() {
                       placeholder="24"
                       value={age}
                       onChange={(e) => setAge(e.target.value)}
-                      className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-850 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm transition-all outline-none text-white text-center"
+                      className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm transition-all outline-none text-white text-center"
                     />
                   </div>
 
@@ -220,7 +220,7 @@ export default function SignupPage() {
                       placeholder="68"
                       value={weight}
                       onChange={(e) => setWeight(e.target.value)}
-                      className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-850 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm transition-all outline-none text-white text-center"
+                      className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm transition-all outline-none text-white text-center"
                     />
                   </div>
 
@@ -232,7 +232,7 @@ export default function SignupPage() {
                       placeholder="172"
                       value={height}
                       onChange={(e) => setHeight(e.target.value)}
-                      className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-850 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm transition-all outline-none text-white text-center"
+                      className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-sm transition-all outline-none text-white text-center"
                     />
                   </div>
                 </div>
@@ -260,7 +260,7 @@ export default function SignupPage() {
                       className={`flex justify-between items-center p-4 rounded-xl border text-left transition-all cursor-pointer ${
                         goal === g.id 
                           ? "bg-amber-500/10 border-amber-500 text-amber-500" 
-                          : "bg-zinc-900/50 border-zinc-850 text-zinc-400 hover:border-zinc-800"
+                          : "bg-zinc-900/50 border-zinc-800 text-zinc-400 hover:border-zinc-800"
                       }`}
                     >
                       <div>
@@ -273,14 +273,14 @@ export default function SignupPage() {
                 </div>
 
                 {/* Live calculation box */}
-                <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-850 flex items-center justify-between mt-1">
+                <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800 flex items-center justify-between mt-1">
                   <div className="flex items-center gap-2.5">
                     <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
                       <Calculator className="h-5 w-5" />
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-zinc-400">Calculated Goal</p>
-                      <p className="text-[10px] text-zinc-550">Mifflin-St Jeor formula</p>
+                      <p className="text-[10px] text-zinc-500">Mifflin-St Jeor formula</p>
                     </div>
                   </div>
                   <div className="text-right">

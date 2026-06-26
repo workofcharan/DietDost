@@ -196,7 +196,7 @@ Your calorie intake is inconsistent, ranging from 1,780 to 2,350 kcal. Weekend d
               return (
                 <div
                   key={day.label}
-                  className="flex items-center gap-4 p-3.5 rounded-xl bg-zinc-900/40 border border-zinc-850 hover:border-zinc-800 transition-all"
+                  className="flex items-center gap-4 p-3.5 rounded-xl bg-zinc-900/40 border border-zinc-800 hover:border-zinc-800 transition-all"
                 >
                   <div className="w-10 text-center">
                     <p className="text-xs font-bold text-zinc-300">{day.label}</p>
