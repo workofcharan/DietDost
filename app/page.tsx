@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import BrandLogo from "@/components/BrandLogo";
 import { 
   ArrowRight, 
   Sparkles, 
@@ -85,15 +86,15 @@ export default function Home() {
 
         {/* Right Column: Interactive Thali Demo */}
         <div className="lg:col-span-5 flex justify-center animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <div className="relative w-80 h-80 md:w-[400px] md:h-[400px] rounded-full border-2 border-black dark:border-zinc-300 bg-white dark:bg-zinc-900 flex items-center justify-center shadow-md dark:shadow-[4px_4px_0_0_#d4d4d4] overflow-hidden group">
+          <div className="relative w-[88vw] max-w-[430px] aspect-square rounded-full border-[3px] border-black dark:border-brand bg-white dark:bg-[#23202d] flex items-center justify-center shadow-md dark:shadow-[4px_4px_0_0_#FFE45E] overflow-hidden group">
             {/* Background grid lines */}
             <div className="absolute inset-0 bg-[radial-gradient(rgba(0,0,0,0.04)_1px,transparent_1px)] dark:bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
             
             {/* Outer steel rim circle */}
-            <div className="absolute inset-4 rounded-full border-2 border-black dark:border-zinc-700/50 flex items-center justify-center">
-              <div className="absolute inset-6 rounded-full border border-dashed border-black dark:border-zinc-800 flex items-center justify-center">
+            <div className="absolute inset-4 rounded-full border-2 border-black dark:border-zinc-500/70 flex items-center justify-center">
+              <div className="absolute inset-8 rounded-full border border-dashed border-black/50 dark:border-brand/30 flex items-center justify-center">
                 {/* Center Core Next.js logo block */}
-                <div className="w-20 h-20 rounded-full bg-white dark:bg-black border-2 border-black dark:border-zinc-800 flex flex-col items-center justify-center z-20 text-center p-2">
+                <div className="w-24 h-24 rounded-full bg-white dark:bg-[#101017] border-2 border-black dark:border-brand flex flex-col items-center justify-center z-20 text-center p-2 shadow-xs">
                   <span className="text-[9px] text-zinc-500 font-mono tracking-wider font-bold">NEXT.JS</span>
                   <span className="text-[11px] text-brand-strong dark:text-brand font-black leading-none">DietDost</span>
                 </div>
@@ -106,12 +107,12 @@ export default function Home() {
                 key={dish.name}
                 onMouseEnter={() => setHoveredDish(dish.name)}
                 onMouseLeave={() => setHoveredDish(null)}
-                className={`absolute w-12 h-12 rounded-full flex items-center justify-center transition-all duration-100 z-30 cursor-pointer ${
+                className={`absolute w-14 h-14 rounded-full flex items-center justify-center transition-all duration-100 z-30 cursor-pointer ${
                   hoveredDish === dish.name 
                     ? "bg-brand text-black scale-125 border-2 border-black" 
-                    : "bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-black dark:text-white border-2 border-black dark:border-zinc-600"
+                    : "bg-brand-softer dark:bg-[#393346] hover:bg-brand text-black dark:text-white border-2 border-black dark:border-zinc-400"
                 }`}
-                style={{ top: dish.y, left: dish.x }}
+                style={{ top: dish.y, left: dish.x, transform: "translate(-50%, -50%)" }}
               >
                 <UtensilsCrossed className="h-5 w-5" />
               </button>
@@ -119,7 +120,7 @@ export default function Home() {
 
             {/* Hover Card Overlay inside the Plate */}
             {hoveredDish && (
-              <div className="absolute z-40 bottom-6 left-6 right-6 p-4 bg-brand border-2 border-black text-left shadow-sm animate-slide-up rounded-none">
+              <div className="absolute z-40 bottom-8 left-8 right-8 p-4 bg-brand border-2 border-black text-left shadow-sm animate-slide-up rounded-none">
                 {dishes
                   .filter((d) => d.name === hoveredDish)
                   .map((d) => (
@@ -136,7 +137,7 @@ export default function Home() {
 
             {/* Default Instruction overlay */}
             {!hoveredDish && (
-              <div className="absolute z-20 bottom-6 left-6 right-6 text-center bg-white dark:bg-black border-2 border-black py-2 px-4 rounded-none shadow-xs">
+              <div className="absolute z-20 bottom-8 left-12 right-12 text-center bg-white/95 dark:bg-[#101017] border-2 border-black dark:border-zinc-400 py-2 px-4 rounded-none shadow-xs">
                 <p className="text-[11px] text-black dark:text-zinc-400 font-bold uppercase tracking-wider">
                   Hover thali items to inspect
                 </p>
@@ -235,10 +236,7 @@ export default function Home() {
       {/* Academic Project Footer */}
       <footer className="bg-white dark:bg-zinc-950 border-t-2 border-black dark:border-zinc-800 py-12 px-6 md:px-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <UtensilsCrossed className="h-5 w-5 text-brand-strong dark:text-brand" />
-            <span className="font-extrabold text-lg">DietDost</span>
-          </div>
+          <BrandLogo size="sm" />
 
           <div className="flex flex-col md:items-end gap-1 text-xs text-zinc-500">
             <p>DietDost v1.0 &middot; Solo Project &middot; 5th Semester</p>

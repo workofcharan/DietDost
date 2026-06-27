@@ -1,3 +1,5 @@
+import { supabase } from "@/lib/supabase";
+
 export type MealCategory = "Breakfast" | "Lunch" | "Dinner" | "Snack";
 
 export type MealLogSource = "curated" | "open-food-facts" | "gemini";
@@ -23,8 +25,6 @@ export type MealLogInput = Omit<MealLog, "id" | "loggedAt" | "sourceLabel"> & {
   sourceLabel?: string;
 };
 
-export const LOG_STORAGE_KEY = "dietdost:meal-logs";
-
 export const MEAL_CATEGORIES: MealCategory[] = ["Breakfast", "Lunch", "Snack", "Dinner"];
 
 export const MEAL_DEFAULT_HOURS: Record<MealCategory, number> = {
@@ -40,27 +40,23 @@ export const SOURCE_LABELS: Record<MealLogSource, string> = {
   gemini: "Gemini AI",
 };
 
-const LEGACY_CATEGORY_HOURS: Record<string, number> = {
-  Breakfast: 8,
-  Lunch: 13,
-  Snack: 17,
-  Dinner: 20,
+type MealLogRow = {
+  id: string;
+  name: string;
+  calories: number | null;
+  protein: number | null;
+  carbs: number | null;
+  fat: number | null;
+  quantity: number | null;
+  serving_label: string | null;
+  consumed_at: string | null;
+  logged_at: string | null;
+  source: string | null;
 };
 
-const INITIAL_LOGS: Array<MealLogInput & { category: MealCategory }> = [
-  { id: "1", name: "2 Idlis with Coconut Chutney", category: "Breakfast", calories: 220, protein: 6, carbs: 42, fat: 3, quantity: 1, servingLabel: "1 plate", consumedAt: consumedAtForMeal("Breakfast"), source: "curated" },
-  { id: "2", name: "Masala Chai (with milk & sugar)", category: "Breakfast", calories: 90, protein: 2, carbs: 12, fat: 3, quantity: 1, servingLabel: "1 cup", consumedAt: withHour(new Date(), 8, 30).toISOString(), source: "curated" },
-  { id: "3", name: "2 Butter Rotis", category: "Lunch", calories: 240, protein: 6, carbs: 36, fat: 8, quantity: 1, servingLabel: "2 pieces", consumedAt: consumedAtForMeal("Lunch"), source: "curated" },
-  { id: "4", name: "Dal Tadka", category: "Lunch", calories: 150, protein: 8, carbs: 20, fat: 4, quantity: 1, servingLabel: "1 bowl", consumedAt: withHour(new Date(), 13, 15).toISOString(), source: "curated" },
-  { id: "5", name: "Bhindi Masala", category: "Lunch", calories: 120, protein: 3, carbs: 14, fat: 6, quantity: 1, servingLabel: "1 bowl", consumedAt: withHour(new Date(), 13, 30).toISOString(), source: "curated" },
-];
-
-function makeId() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 function toFiniteNumber(value: unknown, fallback = 0) {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(number) ? number : fallback;
 }
 
 function toPositiveQuantity(value: unknown) {
@@ -116,7 +112,7 @@ export function createMealLog(input: MealLogInput): MealLog {
   const source = isLogSource(input.source) ? input.source : "curated";
 
   return {
-    id: input.id || makeId(),
+    id: input.id || crypto.randomUUID(),
     name: input.name.trim(),
     calories: toFiniteNumber(input.calories),
     protein: toFiniteNumber(input.protein),
@@ -131,66 +127,92 @@ export function createMealLog(input: MealLogInput): MealLog {
   };
 }
 
-function migrateLog(raw: unknown, index: number): MealLog | null {
-  if (!raw || typeof raw !== "object") return null;
-  const item = raw as Partial<MealLog> & { category?: string };
-  if (!item.name) return null;
-
-  const existingConsumedAt = validDate(item.consumedAt);
-  const fallbackHour = LEGACY_CATEGORY_HOURS[item.category || ""] ?? 12;
-  const consumedAt = existingConsumedAt?.toISOString() || withHour(new Date(), fallbackHour, index * 5).toISOString();
-  const source = isLogSource(item.source) ? item.source : "curated";
-
+function rowToMealLog(row: MealLogRow): MealLog {
+  const source = isLogSource(row.source) ? row.source : "curated";
   return createMealLog({
-    id: typeof item.id === "string" ? item.id : undefined,
-    name: item.name,
-    calories: toFiniteNumber(item.calories),
-    protein: toFiniteNumber(item.protein),
-    carbs: toFiniteNumber(item.carbs),
-    fat: toFiniteNumber(item.fat),
-    quantity: toPositiveQuantity(item.quantity),
-    servingLabel: item.servingLabel || "1 serving",
-    consumedAt,
-    loggedAt: item.loggedAt,
+    id: row.id,
+    name: row.name,
+    calories: row.calories ?? 0,
+    protein: row.protein ?? 0,
+    carbs: row.carbs ?? 0,
+    fat: row.fat ?? 0,
+    quantity: row.quantity ?? 1,
+    servingLabel: row.serving_label || "1 serving",
+    consumedAt: row.consumed_at || new Date().toISOString(),
+    loggedAt: row.logged_at || row.consumed_at || new Date().toISOString(),
     source,
-    sourceLabel: item.sourceLabel,
   });
 }
 
-export function readMealLogs() {
-  if (typeof window === "undefined") return sortMealLogs(INITIAL_LOGS.map(createMealLog));
+function mealLogToInsert(log: MealLog, userId: string) {
+  return {
+    id: log.id,
+    user_id: userId,
+    name: log.name,
+    calories: log.calories,
+    protein: log.protein,
+    carbs: log.carbs,
+    fat: log.fat,
+    quantity: log.quantity,
+    serving_label: log.servingLabel,
+    consumed_at: log.consumedAt,
+    logged_at: log.loggedAt,
+    source: log.source,
+  };
+}
 
-  try {
-    const raw = window.localStorage.getItem(LOG_STORAGE_KEY);
-    if (!raw) {
-      const initial = sortMealLogs(INITIAL_LOGS.map(createMealLog));
-      writeMealLogs(initial);
-      return initial;
-    }
-
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-
-    const migrated = sortMealLogs(parsed.map(migrateLog).filter((log): log is MealLog => Boolean(log)));
-    writeMealLogs(migrated);
-    return migrated;
-  } catch {
-    return sortMealLogs(INITIAL_LOGS.map(createMealLog));
+async function requireUserId() {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) {
+    throw new Error("Please sign in to save and view your meal logs.");
   }
+  return data.user.id;
 }
 
-export function writeMealLogs(logs: MealLog[]) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(sortMealLogs(logs)));
+export async function readMealLogs(options?: { from?: string; to?: string }) {
+  await requireUserId();
+  let query = supabase.from("meal_logs").select("*").order("consumed_at", { ascending: true });
+
+  if (options?.from) query = query.gte("consumed_at", options.from);
+  if (options?.to) query = query.lt("consumed_at", options.to);
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return sortMealLogs(((data || []) as MealLogRow[]).map(rowToMealLog));
 }
 
-export function appendMealLogs(inputs: MealLogInput[]) {
-  const existing = readMealLogs();
-  const next = sortMealLogs([...existing, ...inputs.map(createMealLog)]);
-  writeMealLogs(next);
-  return next;
+export async function appendMealLogs(inputs: MealLogInput[]) {
+  const userId = await requireUserId();
+  const logs = inputs.map(createMealLog);
+  const { data, error } = await supabase
+    .from("meal_logs")
+    .insert(logs.map((log) => mealLogToInsert(log, userId)))
+    .select("*")
+    .order("consumed_at", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return sortMealLogs(((data || []) as MealLogRow[]).map(rowToMealLog));
 }
 
-export function replaceMealLog(logs: MealLog[], id: string, patch: Partial<MealLog>) {
-  return sortMealLogs(logs.map((log) => (log.id === id ? createMealLog({ ...log, ...patch, id: log.id, loggedAt: log.loggedAt }) : log)));
+export async function deleteMealLog(id: string) {
+  const { error } = await supabase.from("meal_logs").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function updateMealLog(id: string, patch: Partial<MealLog>) {
+  const payload: Record<string, unknown> = {};
+  if (patch.name !== undefined) payload.name = patch.name.trim();
+  if (patch.calories !== undefined) payload.calories = toFiniteNumber(patch.calories);
+  if (patch.protein !== undefined) payload.protein = toFiniteNumber(patch.protein);
+  if (patch.carbs !== undefined) payload.carbs = toFiniteNumber(patch.carbs);
+  if (patch.fat !== undefined) payload.fat = toFiniteNumber(patch.fat);
+  if (patch.quantity !== undefined) payload.quantity = toPositiveQuantity(patch.quantity);
+  if (patch.servingLabel !== undefined) payload.serving_label = patch.servingLabel || "1 serving";
+  if (patch.consumedAt !== undefined) payload.consumed_at = validDate(patch.consumedAt)?.toISOString() || new Date().toISOString();
+  if (patch.loggedAt !== undefined) payload.logged_at = validDate(patch.loggedAt)?.toISOString() || new Date().toISOString();
+  if (patch.source !== undefined) payload.source = isLogSource(patch.source) ? patch.source : "curated";
+
+  const { data, error } = await supabase.from("meal_logs").update(payload).eq("id", id).select("*").single();
+  if (error) throw new Error(error.message);
+  return rowToMealLog(data as MealLogRow);
 }

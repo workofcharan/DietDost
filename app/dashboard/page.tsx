@@ -2,6 +2,7 @@
 
 import Navbar from "@/components/Navbar";
 import { getUser } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 import {
   MEAL_CATEGORIES,
   SOURCE_LABELS,
@@ -11,9 +12,9 @@ import {
   formatMealTime,
   getMealCategory,
   readMealLogs,
-  replaceMealLog,
+  deleteMealLog,
   sortMealLogs,
-  writeMealLogs,
+  updateMealLog,
   type MealCategory,
   type MealLog,
   type MealLogSource,
@@ -34,6 +35,7 @@ import {
   TrendingUp,
   X,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 interface AiDish {
@@ -52,6 +54,8 @@ interface AiResult {
   protein: number;
   carbs: number;
   fat: number;
+  notes?: string;
+  warning?: string;
 }
 
 const CATEGORY_COLORS: Record<MealCategory, string> = {
@@ -120,7 +124,10 @@ function LogCard({ log, onDelete, onDragStart }: {
 }
 
 export default function Dashboard() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(true);
+  const [logError, setLogError] = useState<string | null>(null);
   const [calorieGoal, setCalorieGoal] = useState(2000);
   const proteinGoal = 75;
   const carbsGoal = 250;
@@ -148,15 +155,35 @@ export default function Dashboard() {
   const [chatInput, setChatInput] = useState("");
 
   useEffect(() => {
-    setMounted(true);
-    const user = getUser();
-    if (user?.calorieGoal) setCalorieGoal(user.calorieGoal);
-    setLogs(readMealLogs());
-  }, []);
+    let cancelled = false;
 
-  useEffect(() => {
-    if (mounted) writeMealLogs(logs);
-  }, [logs, mounted]);
+    async function load() {
+      setMounted(true);
+      const { data } = await supabase.auth.getSession();
+      const session = data.session;
+      if (!session) {
+        router.replace("/auth/login");
+        return;
+      }
+
+      const user = getUser();
+      if (user?.calorieGoal) setCalorieGoal(user.calorieGoal);
+
+      try {
+        const cloudLogs = await readMealLogs();
+        if (!cancelled) setLogs(cloudLogs);
+      } catch (err) {
+        if (!cancelled) setLogError(err instanceof Error ? err.message : "Could not load your meal logs.");
+      } finally {
+        if (!cancelled) setIsLoadingLogs(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   useEffect(() => {
     const query = searchQuery.trim();
@@ -203,38 +230,59 @@ export default function Dashboard() {
 
   const refreshLogs = (next: MealLog[]) => setLogs(sortMealLogs(next));
 
-  const handleAddLog = (e: React.FormEvent) => {
+  const handleAddLog = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFood) return;
 
     const source = sourceFromFood(selectedFood);
-    const next = appendMealLogs([{
-      name: selectedFood.name,
-      calories: selectedFood.calories,
-      protein: selectedFood.protein,
-      carbs: selectedFood.carbs,
-      fat: selectedFood.fat,
-      quantity,
-      servingLabel: selectedFood.servingLabel,
-      consumedAt: selectedLogTime === "now" ? new Date().toISOString() : consumedAtForMeal(selectedLogTime),
-      source,
-      sourceLabel: SOURCE_LABELS[source],
-    }]);
+    try {
+      setLogError(null);
+      const created = await appendMealLogs([{
+        name: selectedFood.name,
+        calories: selectedFood.calories,
+        protein: selectedFood.protein,
+        carbs: selectedFood.carbs,
+        fat: selectedFood.fat,
+        quantity,
+        servingLabel: selectedFood.servingLabel,
+        consumedAt: selectedLogTime === "now" ? new Date().toISOString() : consumedAtForMeal(selectedLogTime),
+        source,
+        sourceLabel: SOURCE_LABELS[source],
+      }]);
 
-    refreshLogs(next);
-    setSearchQuery("");
-    setSearchResults([]);
-    setSelectedFood(null);
-    setQuantity(1);
-    setSelectedLogTime("now");
+      refreshLogs([...logs, ...created]);
+      setSearchQuery("");
+      setSearchResults([]);
+      setSelectedFood(null);
+      setQuantity(1);
+      setSelectedLogTime("now");
+    } catch (err) {
+      setLogError(err instanceof Error ? err.message : "Could not save this food log.");
+    }
   };
 
-  const handleDeleteLog = (id: string) => refreshLogs(logs.filter((log) => log.id !== id));
+  const handleDeleteLog = async (id: string) => {
+    const previous = logs;
+    refreshLogs(logs.filter((log) => log.id !== id));
+    try {
+      await deleteMealLog(id);
+    } catch (err) {
+      refreshLogs(previous);
+      setLogError(err instanceof Error ? err.message : "Could not delete this food log.");
+    }
+  };
 
-  const moveLogTo = (id: string | null, consumedAt: string) => {
+  const moveLogTo = async (id: string | null, consumedAt: string) => {
     if (!id) return;
-    refreshLogs(replaceMealLog(logs, id, { consumedAt }));
+    const previous = logs;
+    refreshLogs(logs.map((log) => (log.id === id ? { ...log, consumedAt } : log)));
     setDraggingLogId(null);
+    try {
+      await updateMealLog(id, { consumedAt });
+    } catch (err) {
+      refreshLogs(previous);
+      setLogError(err instanceof Error ? err.message : "Could not update this food log.");
+    }
   };
 
   const handleAiAnalyse = async () => {
@@ -254,6 +302,9 @@ export default function Dashboard() {
         total_protein: number;
         total_carbs: number;
         total_fat: number;
+        notes?: string;
+        warning?: string;
+        partial?: boolean;
         error?: string;
       };
       if (!res.ok || data.error) throw new Error(data.error || "Analysis failed");
@@ -263,6 +314,8 @@ export default function Dashboard() {
         protein: data.total_protein,
         carbs: data.total_carbs,
         fat: data.total_fat,
+        notes: data.notes,
+        warning: data.warning || (data.partial ? "Some dishes could not be analysed right now." : undefined),
       });
     } catch (err: unknown) {
       setAiError(err instanceof Error ? err.message : "AI analysis failed");
@@ -271,23 +324,28 @@ export default function Dashboard() {
     }
   };
 
-  const handleAddAiLogs = () => {
+  const handleAddAiLogs = async () => {
     if (!aiResult) return;
     const now = new Date().toISOString();
-    const next = appendMealLogs(aiResult.dishes.map((dish) => ({
-      name: dish.name,
-      calories: dish.calories,
-      protein: dish.protein,
-      carbs: dish.carbs,
-      fat: dish.fat,
-      quantity: dish.quantity,
-      servingLabel: dish.servingLabel,
-      consumedAt: now,
-      source: "gemini",
-    })));
-    refreshLogs(next);
-    setAiResult(null);
-    setAiInput("");
+    try {
+      setLogError(null);
+      const created = await appendMealLogs(aiResult.dishes.map((dish) => ({
+        name: dish.name,
+        calories: dish.calories,
+        protein: dish.protein,
+        carbs: dish.carbs,
+        fat: dish.fat,
+        quantity: dish.quantity,
+        servingLabel: dish.servingLabel,
+        consumedAt: now,
+        source: "gemini",
+      })));
+      refreshLogs([...logs, ...created]);
+      setAiResult(null);
+      setAiInput("");
+    } catch (err) {
+      setLogError(err instanceof Error ? err.message : "Could not add AI results to your log.");
+    }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -311,12 +369,12 @@ export default function Dashboard() {
     }
   };
 
-  if (!mounted) {
+  if (!mounted || isLoadingLogs) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-black border-t-brand animate-spin-slow rounded-full" />
-          <p className="font-extrabold text-black dark:text-white uppercase tracking-widest text-xs">Loading DietDost...</p>
+          <p className="font-extrabold text-black dark:text-white uppercase tracking-widest text-xs">Loading your DietDost logs...</p>
         </div>
       </div>
     );
@@ -328,6 +386,12 @@ export default function Dashboard() {
 
       <main className="max-w-7xl mx-auto px-4 md:px-8 pt-24 md:pt-28 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-8 flex flex-col gap-8">
+          {logError && (
+            <div className="bg-danger-soft border-2 border-danger text-danger-strong dark:text-danger p-4 text-sm font-bold shadow-sm">
+              {logError}
+            </div>
+          )}
+
           <div className="bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 shadow-md p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center justify-between rounded-none animate-fade-in">
             <div className="flex flex-col items-center gap-3 shrink-0">
               <p className="text-xs font-black text-black dark:text-zinc-300 uppercase tracking-widest">Today&rsquo;s Energy</p>
@@ -599,6 +663,12 @@ export default function Dashboard() {
                 })}
               </div>
             )}
+
+            {sortedLogs.length === 0 && (
+              <div className="bg-brand-softer dark:bg-zinc-900 border-2 border-brand-strong dark:border-brand p-5 text-sm font-bold text-black dark:text-zinc-100 shadow-sm">
+                No meals logged yet. Search for a food or use the AI Meal Analyser to start your first real cloud-backed log.
+              </div>
+            )}
           </div>
         </div>
 
@@ -638,7 +708,19 @@ export default function Dashboard() {
               )}
             </button>
 
-            {aiError && <p className="text-xs font-bold text-danger">{aiError}</p>}
+            {aiError && (
+              <div className="flex flex-col gap-2 bg-danger-soft border-2 border-danger p-3">
+                <p className="text-xs font-black text-danger">Meal analysis is temporarily unavailable.</p>
+                <p className="text-xs font-bold text-danger-strong dark:text-danger">{aiError}</p>
+                <button
+                  onClick={handleAiAnalyse}
+                  disabled={isAnalysing || aiInput.trim() === ""}
+                  className="self-start px-3 py-1.5 bg-white border-2 border-danger text-danger text-[11px] font-black hover:bg-danger hover:text-white transition-all"
+                >
+                  Retry analysis
+                </button>
+              </div>
+            )}
 
             {aiResult && (
               <div className="mt-1 p-4 bg-brand-softer border-2 border-brand-strong flex flex-col gap-3 animate-slide-up rounded-none">
@@ -654,6 +736,8 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
+                {aiResult.warning && <p className="text-[11px] font-bold text-warning-strong">{aiResult.warning}</p>}
+                {aiResult.notes && <p className="text-[11px] font-medium text-black/70">{aiResult.notes}</p>}
                 <div className={`w-fit text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 border ${SOURCE_STYLES.gemini}`}>
                   Gemini AI estimate
                 </div>

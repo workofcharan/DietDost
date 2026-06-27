@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { 
   LayoutDashboard, 
   Sparkles, 
-  ClipboardList, 
-  Utensils 
+  ClipboardList
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
+import BrandLogo from "./BrandLogo";
 import { getUser, clearUser, syncSession, type DietDostUser } from "@/lib/auth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -52,12 +52,7 @@ export default function Navbar() {
     <>
       {/* Desktop Top Header / Navbar */}
       <header className="hidden md:flex fixed top-0 left-0 right-0 h-16 items-center justify-between px-8 bg-white border-b-2 border-black z-50 dark:bg-zinc-950 dark:border-zinc-300">
-        <Link href="/" className="flex items-center gap-2">
-          <Utensils className="h-6 w-6 text-brand" />
-          <span className="text-xl font-black font-serif tracking-tight text-black dark:text-white">
-            Diet<span className="text-brand">Dost</span>
-          </span>
-        </Link>
+        <BrandLogo size="sm" />
 
         <nav className="flex items-center gap-1 border-2 border-black bg-brand p-1 shadow-sm dark:border-zinc-300 dark:bg-zinc-900">
           {navItems.map((item) => {
@@ -111,6 +106,11 @@ export default function Navbar() {
         </div>
       </header>
 
+      <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white/95 dark:bg-zinc-900/95 border-b-2 border-black dark:border-zinc-300 z-50 flex items-center justify-between px-4 backdrop-blur">
+        <BrandLogo size="sm" />
+        <ThemeToggle />
+      </header>
+
       {/* Mobile Bottom Navigation Bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t-2 border-black flex items-center justify-around px-2 z-50 pb-safe dark:bg-zinc-950 dark:border-zinc-300">
         {navItems.map((item) => {
@@ -130,9 +130,6 @@ export default function Navbar() {
           );
         })}
       </nav>
-      <div className="fixed right-4 top-4 z-50 md:hidden">
-        <ThemeToggle />
-      </div>
     </>
   );
 }

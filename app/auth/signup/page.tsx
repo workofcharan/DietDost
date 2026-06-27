@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
-  Utensils,
   Mail,
   Lock,
   User,
@@ -14,6 +13,7 @@ import {
   Calculator,
   AlertCircle
 } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 import { syncSession } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
@@ -63,6 +63,10 @@ export default function SignupPage() {
   const handleNext = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (step === 1 && password.length < 6) {
+      setError("Password must be at least 6 characters. Please fix it before continuing.");
+      return;
+    }
     if (step < 3) {
       setStep(step + 1);
     } else {
@@ -117,12 +121,9 @@ export default function SignupPage() {
     <div className="min-h-screen bg-neutral-secondary-soft dark:bg-zinc-950 flex flex-col justify-center items-center px-4 relative font-sans selection:bg-brand selection:text-black">
       <div className="w-full max-w-md z-10">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2 justify-center mb-6">
-          <Utensils className="h-6 w-6 text-brand" />
-          <span className="text-3xl font-extrabold font-serif tracking-tight text-black dark:text-white">
-            Diet<span className="text-brand">Dost</span>
-          </span>
-        </Link>
+        <div className="flex justify-center mb-6">
+          <BrandLogo size="lg" />
+        </div>
 
         {/* Steps indicator */}
         <div className="flex justify-between items-center px-2 mb-4 text-xs text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider">
@@ -197,12 +198,16 @@ export default function SignupPage() {
                       id="signup-password"
                       type="password"
                       required
+                      minLength={6}
                       placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 hover:border-black dark:hover:border-white focus:border-brand focus:ring-0 shadow-xs focus:shadow-sm rounded-none text-sm transition-all outline-none text-black dark:text-white placeholder:text-zinc-500"
                     />
                   </div>
+                  <p className={`text-[11px] font-bold ${password.length > 0 && password.length < 6 ? "text-danger" : "text-zinc-500 dark:text-zinc-400"}`}>
+                    Use at least 6 characters.
+                  </p>
                 </div>
               </div>
             )}
