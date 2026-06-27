@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Utensils, Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
+import { Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 import { syncSession } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
@@ -49,12 +50,9 @@ export default function LoginPage() {
     <div className="min-h-screen bg-neutral-secondary-soft dark:bg-zinc-950 flex flex-col justify-center items-center px-4 relative font-sans selection:bg-brand selection:text-black">
       <div className="w-full max-w-md z-10">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2 justify-center mb-8">
-          <Utensils className="h-6 w-6 text-brand" />
-          <span className="text-3xl font-extrabold font-serif tracking-tight text-black dark:text-white">
-            Diet<span className="text-brand">Dost</span>
-          </span>
-        </Link>
+        <div className="flex justify-center mb-8">
+          <BrandLogo size="lg" />
+        </div>
 
         {/* Card */}
         <div className="bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 shadow-md p-8 text-left rounded-none">

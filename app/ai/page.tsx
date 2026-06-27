@@ -2,6 +2,7 @@
 
 import Navbar from "@/components/Navbar";
 import { appendMealLogs } from "@/lib/mealLogs";
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { Sparkles, Brain, MessageSquare, ArrowRight, Zap, Send, RotateCcw } from "lucide-react";
@@ -22,6 +23,8 @@ interface AiResult {
   total_carbs: number;
   total_fat: number;
   notes: string;
+  warning?: string;
+  partial?: boolean;
 }
 
 interface ChatMessage {
@@ -49,6 +52,7 @@ export default function AIPage() {
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AiResult | null>(null);
   const [analyseError, setAnalyseError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     { sender: "ai", text: "Namaste! 🙏 I'm your DietDost AI nutritionist. I specialise in Indian food, regional cuisines, and practical dietary advice. Ask me anything!" },
@@ -60,6 +64,12 @@ export default function AIPage() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, isChatLoading]);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) router.replace("/auth/login");
+    });
+  }, [router]);
 
   const handleAnalyse = async () => {
     if (mealText.trim() === "") return;
@@ -107,21 +117,26 @@ export default function AIPage() {
     }
   };
 
-  const handleAddAnalysisToDashboard = () => {
+  const handleAddAnalysisToDashboard = async () => {
     if (!analysisResult) return;
     const now = new Date().toISOString();
-    appendMealLogs(analysisResult.dishes.map((dish) => ({
-      name: dish.name,
-      calories: dish.calories,
-      protein: dish.protein,
-      carbs: dish.carbs,
-      fat: dish.fat,
-      quantity: 1,
-      servingLabel: dish.servingLabel,
-      consumedAt: now,
-      source: "gemini",
-    })));
-    router.push("/dashboard");
+    setSaveError(null);
+    try {
+      await appendMealLogs(analysisResult.dishes.map((dish) => ({
+        name: dish.name,
+        calories: dish.calories,
+        protein: dish.protein,
+        carbs: dish.carbs,
+        fat: dish.fat,
+        quantity: 1,
+        servingLabel: dish.servingLabel,
+        consumedAt: now,
+        source: "gemini",
+      })));
+      router.push("/dashboard");
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Could not save this analysis.");
+    }
   };
 
   return (
@@ -233,11 +248,11 @@ export default function AIPage() {
 
               {analyseError && !isAnalysing && (
                 <div className="flex flex-col gap-3 p-5 bg-danger-soft border-2 border-danger animate-fade-in rounded-none min-h-[120px] justify-center">
-                  <p className="font-extrabold text-danger">⚠ Analysis Failed</p>
+                  <p className="font-extrabold text-danger">Analysis is temporarily unavailable</p>
                   <p className="text-xs text-danger font-medium">{analyseError}</p>
-                  <button onClick={() => setAnalyseError(null)}
+                  <button onClick={handleAnalyse}
                     className="self-start text-xs font-extrabold border-2 border-danger text-danger px-3 py-1 hover:bg-danger hover:text-white transition-all cursor-pointer rounded-none">
-                    Dismiss
+                    Retry analysis
                   </button>
                 </div>
               )}
@@ -293,6 +308,18 @@ export default function AIPage() {
                     </div>
                     <p className="text-xs text-success-strong font-medium leading-relaxed">{analysisResult.notes}</p>
                   </div>
+
+                  {analysisResult.warning && (
+                    <div className="p-4 bg-warning-soft border-2 border-warning text-warning-strong text-xs font-bold rounded-none">
+                      {analysisResult.warning}
+                    </div>
+                  )}
+
+                  {saveError && (
+                    <div className="p-4 bg-danger-soft border-2 border-danger text-danger text-xs font-bold rounded-none">
+                      {saveError}
+                    </div>
+                  )}
 
                   <div className="flex gap-3">
                     <button onClick={handleAddAnalysisToDashboard}

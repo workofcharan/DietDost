@@ -1,7 +1,11 @@
 "use client";
 
 import Navbar from "@/components/Navbar";
-import { useState } from "react";
+import { getUser } from "@/lib/auth";
+import { readMealLogs, type MealLog } from "@/lib/mealLogs";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import {
   TrendingUp,
   BarChart3,
@@ -22,23 +26,12 @@ interface DayData {
   fat: number;
 }
 
-const WEEKLY_DATA: DayData[] = [
-  { date: "2026-06-20", label: "Mon", calories: 1820, protein: 58, carbs: 218, fat: 62 },
-  { date: "2026-06-21", label: "Tue", calories: 2100, protein: 71, carbs: 248, fat: 74 },
-  { date: "2026-06-22", label: "Wed", calories: 1950, protein: 63, carbs: 235, fat: 68 },
-  { date: "2026-06-23", label: "Thu", calories: 2240, protein: 80, carbs: 260, fat: 78 },
-  { date: "2026-06-24", label: "Fri", calories: 1780, protein: 54, carbs: 210, fat: 58 },
-  { date: "2026-06-25", label: "Sat", calories: 2350, protein: 76, carbs: 278, fat: 82 },
-  { date: "2026-06-26", label: "Sun", calories: 820, protein: 25, carbs: 95, fat: 28 },
-];
-
-const CALORIE_GOAL = 2000;
 const PROTEIN_GOAL = 75;
 
-function getDayStatus(day: DayData) {
+function getDayStatus(day: DayData, calorieGoal: number) {
   if (day.calories === 0) return "empty";
-  if (day.calories > CALORIE_GOAL + 150) return "over";
-  if (day.calories < CALORIE_GOAL - 300) return "under";
+  if (day.calories > calorieGoal + 150) return "over";
+  if (day.calories < calorieGoal - 300) return "under";
   return "on-target";
 }
 
@@ -56,29 +49,94 @@ const STATUS_LABEL: Record<string, string> = {
   "empty": "text-zinc-400",
 };
 
+function dateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function buildWeekData(start: Date, logs: MealLog[]): DayData[] {
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    const key = dateKey(date);
+    const dayLogs = logs.filter((log) => dateKey(new Date(log.consumedAt)) === key);
+
+    return {
+      date: key,
+      label: new Intl.DateTimeFormat("en-IN", { weekday: "short" }).format(date),
+      calories: Math.round(dayLogs.reduce((sum, log) => sum + log.calories * log.quantity, 0)),
+      protein: Math.round(dayLogs.reduce((sum, log) => sum + log.protein * log.quantity, 0)),
+      carbs: Math.round(dayLogs.reduce((sum, log) => sum + log.carbs * log.quantity, 0)),
+      fat: Math.round(dayLogs.reduce((sum, log) => sum + log.fat * log.quantity, 0)),
+    };
+  });
+}
+
 export default function WeeklyReviewPage() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [weeklyData, setWeeklyData] = useState<DayData[]>([]);
+  const [calorieGoal, setCalorieGoal] = useState(2000);
   const [aiReviewLoading, setAiReviewLoading] = useState(false);
   const [aiReview, setAiReview] = useState<string | null>(null);
 
-  const validDays = WEEKLY_DATA.filter((d) => d.calories > 0);
-  const avgCalories = Math.round(validDays.reduce((a, d) => a + d.calories, 0) / validDays.length);
-  const avgProtein = Math.round(validDays.reduce((a, d) => a + d.protein, 0) / validDays.length);
-  const daysOnTarget = validDays.filter((d) => d.calories <= CALORIE_GOAL + 150 && d.calories >= CALORIE_GOAL - 300).length;
-  const maxCalDay = [...WEEKLY_DATA].sort((a, b) => b.calories - a.calories)[0];
-  const maxVal = Math.max(...WEEKLY_DATA.map((d) => d.calories), CALORIE_GOAL * 1.2);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        router.replace("/auth/login");
+        return;
+      }
+
+      const user = getUser();
+      if (user?.calorieGoal) setCalorieGoal(user.calorieGoal);
+
+      try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const start = new Date(today);
+        start.setDate(start.getDate() - 6);
+        const end = new Date(today);
+        end.setDate(end.getDate() + 1);
+        const logs = await readMealLogs({ from: start.toISOString(), to: end.toISOString() });
+        if (!cancelled) setWeeklyData(buildWeekData(start, logs));
+      } catch (err) {
+        if (!cancelled) setLoadError(err instanceof Error ? err.message : "Could not load your weekly review.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  const validDays = weeklyData.filter((d) => d.calories > 0);
+  const avgCalories = validDays.length ? Math.round(validDays.reduce((a, d) => a + d.calories, 0) / validDays.length) : 0;
+  const avgProtein = validDays.length ? Math.round(validDays.reduce((a, d) => a + d.protein, 0) / validDays.length) : 0;
+  const daysOnTarget = validDays.filter((d) => d.calories <= calorieGoal + 150 && d.calories >= calorieGoal - 300).length;
+  const maxCalDay = useMemo(() => [...weeklyData].sort((a, b) => b.calories - a.calories)[0] || { label: "-", calories: 0 }, [weeklyData]);
+  const maxVal = Math.max(...weeklyData.map((d) => d.calories), calorieGoal * 1.2);
 
   const handleGetAiReview = async () => {
     setAiReviewLoading(true);
     setAiReview(null);
 
     // Build a structured data summary to send to the AI
-    const weekSummary = WEEKLY_DATA.map(d =>
+    const weekSummary = weeklyData.map(d =>
       `${d.label} (${d.date}): ${d.calories} kcal, ${d.protein}g protein, ${d.carbs}g carbs, ${d.fat}g fat`
     ).join("\n");
 
     const prompt = `You are DietDost, a nutrition coach specialised in Indian food. Analyse this user's weekly food log and give a concise, actionable review.
 
-Weekly data (calorie goal: ${CALORIE_GOAL} kcal/day, protein goal: ${PROTEIN_GOAL}g/day):
+Weekly data (calorie goal: ${calorieGoal} kcal/day, protein goal: ${PROTEIN_GOAL}g/day):
 ${weekSummary}
 
 Averages: ${avgCalories} kcal/day, ${avgProtein}g protein/day
@@ -133,6 +191,17 @@ Write a review using EXACTLY this format (no markdown code blocks, just plain te
     },
   ];
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-black border-t-brand animate-spin-slow rounded-full" />
+          <p className="font-extrabold text-black dark:text-white uppercase tracking-widest text-xs">Loading your weekly review...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground font-sans pb-24 md:pb-12 page-enter selection:bg-brand selection:text-black">
       <Navbar />
@@ -149,12 +218,12 @@ Write a review using EXACTLY this format (no markdown code blocks, just plain te
               This Week&rsquo;s Diet Review
             </h1>
             <p className="text-zinc-600 dark:text-zinc-400 text-sm">
-              Jun 20 – Jun 26, 2026 &middot; Personal calorie goal: <strong className="text-black dark:text-white">{CALORIE_GOAL} kcal / day</strong>
+              {weeklyData[0]?.date || "This week"} – {weeklyData[6]?.date || "today"} &middot; Personal calorie goal: <strong className="text-black dark:text-white">{calorieGoal} kcal / day</strong>
             </p>
           </div>
           <button
             onClick={handleGetAiReview}
-            disabled={aiReviewLoading}
+            disabled={aiReviewLoading || validDays.length === 0}
             className="flex items-center gap-2 px-6 py-3.5 bg-brand hover:bg-brand-strong text-black font-extrabold border-2 border-black shadow-sm hover:shadow-md active:shadow-2xs hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 rounded-none transition-all text-sm cursor-pointer disabled:opacity-60 shrink-0"
           >
             {aiReviewLoading ? (
@@ -164,6 +233,18 @@ Write a review using EXACTLY this format (no markdown code blocks, just plain te
             )}
           </button>
         </div>
+
+        {loadError && (
+          <div className="bg-danger-soft border-2 border-danger text-danger-strong dark:text-danger p-4 text-sm font-bold shadow-sm">
+            {loadError}
+          </div>
+        )}
+
+        {validDays.length === 0 && (
+          <div className="bg-brand-softer dark:bg-zinc-900 border-2 border-brand-strong dark:border-brand p-6 text-sm font-bold text-black dark:text-zinc-100 shadow-sm">
+            No meal logs found for this week. Add your first meals on the dashboard and this review will update from your Supabase data.
+          </div>
+        )}
 
         {/* Summary Stat Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
@@ -201,17 +282,17 @@ Write a review using EXACTLY this format (no markdown code blocks, just plain te
             {/* Goal line */}
             <div
               className="absolute left-0 right-0 border-t-2 border-dashed border-black/30 dark:border-zinc-500 pointer-events-none"
-              style={{ bottom: `${(CALORIE_GOAL / maxVal) * 100}%` }}
+              style={{ bottom: `${(calorieGoal / maxVal) * 100}%` }}
             >
               <span className="absolute right-0 -top-5 text-[9px] text-black dark:text-zinc-400 font-black bg-white dark:bg-zinc-900 px-1 border border-black/20 dark:border-zinc-600">
-                Goal {CALORIE_GOAL}
+                Goal {calorieGoal}
               </span>
             </div>
 
-            {WEEKLY_DATA.map((day, i) => {
+            {weeklyData.map((day, i) => {
               const heightPercent = (day.calories / maxVal) * 100;
-              const status = getDayStatus(day);
-              const isToday = day.label === "Sun";
+              const status = getDayStatus(day, calorieGoal);
+              const isToday = i === weeklyData.length - 1;
               return (
                 <div key={day.label} className="flex-1 flex flex-col items-center gap-1.5" style={{ animationDelay: `${i * 60}ms` }}>
                   <span className="text-[9px] font-black font-mono text-zinc-500">{day.calories > 0 ? day.calories : "-"}</span>
@@ -232,8 +313,8 @@ Write a review using EXACTLY this format (no markdown code blocks, just plain te
         <div className="bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 shadow-md p-6 flex flex-col gap-4 animate-fade-in rounded-none" style={{ animationDelay: "0.25s" }}>
           <h2 className="font-black text-lg text-black dark:text-white">Daily Breakdown</h2>
           <div className="flex flex-col gap-2">
-            {WEEKLY_DATA.map((day) => {
-              const status = getDayStatus(day);
+            {weeklyData.map((day) => {
+              const status = getDayStatus(day, calorieGoal);
               const isOver = status === "over";
               const isOnTarget = status === "on-target";
               return (
@@ -249,7 +330,7 @@ Write a review using EXACTLY this format (no markdown code blocks, just plain te
                   <div className="flex-1 macro-bar border-black/20 dark:border-zinc-700">
                     <div
                       className={`macro-bar-fill ${STATUS_BAR[status]}`}
-                      style={{ width: `${Math.min(100, (day.calories / (CALORIE_GOAL * 1.3)) * 100)}%` }}
+                      style={{ width: `${Math.min(100, (day.calories / (calorieGoal * 1.3)) * 100)}%` }}
                     />
                   </div>
 
