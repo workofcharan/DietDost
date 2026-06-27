@@ -9,7 +9,7 @@ import {
   Utensils 
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
-import { getUser, clearUser, type DietDostUser } from "@/lib/auth";
+import { getUser, clearUser, syncSession, type DietDostUser } from "@/lib/auth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
@@ -20,23 +20,14 @@ export default function Navbar() {
 
   useEffect(() => {
     setUser(getUser());
+
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(syncSession(data.session));
+    });
     
     // Subscribe to auth state updates to reactively update navigation header
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
-      if (session) {
-        const meta = (session.user.user_metadata ?? {}) as Record<string, unknown>;
-        const name = typeof meta.name === "string" ? meta.name : session.user.email?.split("@")[0] || "DietDost User";
-        const calorieGoal = typeof meta.calorieGoal === "number" ? meta.calorieGoal : Number(meta.calorieGoal) || 2000;
-        const goal = typeof meta.goal === "string" ? meta.goal : "maintain";
-        setUser({
-          name,
-          email: session.user.email || "",
-          calorieGoal,
-          goal,
-        });
-      } else {
-        setUser(null);
-      }
+      setUser(syncSession(session));
     });
 
     return () => {

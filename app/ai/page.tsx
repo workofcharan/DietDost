@@ -1,7 +1,8 @@
 "use client";
 
 import Navbar from "@/components/Navbar";
-import Link from "next/link";
+import { appendMealLogs } from "@/lib/mealLogs";
+import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { Sparkles, Brain, MessageSquare, ArrowRight, Zap, Send, RotateCcw } from "lucide-react";
 
@@ -42,6 +43,7 @@ const MACRO_EXAMPLES = [
 ];
 
 export default function AIPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"analyser" | "chat">("analyser");
   const [mealText, setMealText] = useState("");
   const [isAnalysing, setIsAnalysing] = useState(false);
@@ -105,6 +107,23 @@ export default function AIPage() {
     }
   };
 
+  const handleAddAnalysisToDashboard = () => {
+    if (!analysisResult) return;
+    const now = new Date().toISOString();
+    appendMealLogs(analysisResult.dishes.map((dish) => ({
+      name: dish.name,
+      calories: dish.calories,
+      protein: dish.protein,
+      carbs: dish.carbs,
+      fat: dish.fat,
+      quantity: 1,
+      servingLabel: dish.servingLabel,
+      consumedAt: now,
+      source: "gemini",
+    })));
+    router.push("/dashboard");
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground font-sans pb-24 md:pb-12 page-enter selection:bg-brand selection:text-black">
       <Navbar />
@@ -120,7 +139,7 @@ export default function AIPage() {
             AI-Powered Nutrition Tools
           </h1>
           <p className="text-zinc-600 dark:text-zinc-400 text-sm md:text-base max-w-2xl mx-auto leading-relaxed">
-            DietDost uses AI to parse messy meal descriptions and provide conversational guidance tuned specifically for Indian food culture.
+            DietDost uses Gemini AI for fuzzy meal parsing and chat, while searchable foods come from curated data and Open Food Facts.
           </p>
         </div>
 
@@ -253,7 +272,12 @@ export default function AIPage() {
                       {analysisResult.dishes.map((dish, i) => (
                         <div key={i} className="flex justify-between items-center p-4 bg-zinc-50 dark:bg-zinc-800 border-2 border-black dark:border-zinc-600 hover:shadow-xs transition-all rounded-none">
                           <div>
-                            <p className="font-extrabold text-sm text-black dark:text-white">{dish.name}</p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-extrabold text-sm text-black dark:text-white">{dish.name}</p>
+                              <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 border border-warning bg-warning-soft text-warning-strong dark:text-warning">
+                                Gemini AI
+                              </span>
+                            </div>
                             <p className="text-[10px] text-zinc-500 font-medium mt-0.5">{dish.servingLabel} · P:{dish.protein}g C:{dish.carbs}g F:{dish.fat}g</p>
                           </div>
                           <span className="text-sm font-black font-mono text-brand-strong dark:text-brand">{dish.calories} kcal</span>
@@ -271,10 +295,10 @@ export default function AIPage() {
                   </div>
 
                   <div className="flex gap-3">
-                    <Link href="/dashboard"
+                    <button onClick={handleAddAnalysisToDashboard}
                       className="flex-1 flex items-center justify-center gap-2 py-3 bg-black dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 border-2 border-black text-white dark:text-black font-extrabold shadow-sm hover:shadow-md active:shadow-2xs hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 rounded-none transition-all text-sm cursor-pointer">
                       Add to Dashboard <ArrowRight className="h-4 w-4" />
-                    </Link>
+                    </button>
                     <button onClick={() => { setAnalysisResult(null); setMealText(""); }}
                       className="px-4 py-3 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-2 border-black dark:border-zinc-300 text-black dark:text-white font-extrabold shadow-xs hover:shadow-sm rounded-none transition-all cursor-pointer">
                       <RotateCcw className="h-4 w-4" />

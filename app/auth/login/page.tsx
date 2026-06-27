@@ -34,6 +34,9 @@ export default function LoginPage() {
       if (data.session) {
         syncSession(data.session);
         router.push("/dashboard");
+      } else {
+        setError("Sign in succeeded, but no active session was returned. Please confirm your email and try again.");
+        setIsLoading(false);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "An unexpected error occurred.";

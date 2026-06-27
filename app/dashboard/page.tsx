@@ -1,33 +1,40 @@
 "use client";
 
 import Navbar from "@/components/Navbar";
-import { useEffect, useMemo, useState } from "react";
-import { 
-  Plus, 
-  Search, 
-  Trash2, 
-  Sparkles, 
-  Brain,
-  MessageSquare,
-  X,
-  Flame,
-  TrendingUp,
-  Send,
-} from "lucide-react";
 import { getUser } from "@/lib/auth";
+import {
+  MEAL_CATEGORIES,
+  SOURCE_LABELS,
+  appendMealLogs,
+  consumedAtForHour,
+  consumedAtForMeal,
+  formatMealTime,
+  getMealCategory,
+  readMealLogs,
+  replaceMealLog,
+  sortMealLogs,
+  writeMealLogs,
+  type MealCategory,
+  type MealLog,
+  type MealLogSource,
+} from "@/lib/mealLogs";
 import type { NutritionFood } from "@/lib/nutrition";
-
-interface MealLog {
-  id: string;
-  name: string;
-  category: "Breakfast" | "Lunch" | "Dinner" | "Snack";
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  quantity: number;
-  servingLabel: string;
-}
+import {
+  Brain,
+  CalendarClock,
+  Flame,
+  GripVertical,
+  LayoutGrid,
+  MessageSquare,
+  Plus,
+  Search,
+  Send,
+  Sparkles,
+  Trash2,
+  TrendingUp,
+  X,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 interface AiDish {
   name: string;
@@ -47,29 +54,70 @@ interface AiResult {
   fat: number;
 }
 
-const INITIAL_LOGS: MealLog[] = [
-  { id: "1", name: "2 Idlis with Coconut Chutney", category: "Breakfast", calories: 220, protein: 6, carbs: 42, fat: 3, quantity: 1, servingLabel: "1 plate" },
-  { id: "2", name: "Masala Chai (with milk & sugar)", category: "Breakfast", calories: 90, protein: 2, carbs: 12, fat: 3, quantity: 1, servingLabel: "1 cup" },
-  { id: "3", name: "2 Butter Rotis", category: "Lunch", calories: 240, protein: 6, carbs: 36, fat: 8, quantity: 1, servingLabel: "2 pieces" },
-  { id: "4", name: "Dal Tadka", category: "Lunch", calories: 150, protein: 8, carbs: 20, fat: 4, quantity: 1, servingLabel: "1 bowl" },
-  { id: "5", name: "Bhindi Masala", category: "Lunch", calories: 120, protein: 3, carbs: 14, fat: 6, quantity: 1, servingLabel: "1 bowl" },
-];
-
-const LOG_STORAGE_KEY = "dietdost:meal-logs";
-
-const CATEGORY_COLORS: Record<string, string> = {
+const CATEGORY_COLORS: Record<MealCategory, string> = {
   Breakfast: "bg-brand border-black text-black",
   Lunch: "bg-success border-black text-white",
   Dinner: "bg-danger border-black text-white",
   Snack: "bg-warning border-black text-black",
 };
 
-const CATEGORY_ACCENT: Record<string, string> = {
-  Breakfast: "text-brand-strong",
+const CATEGORY_ACCENT: Record<MealCategory, string> = {
+  Breakfast: "text-brand-strong dark:text-brand",
   Lunch: "text-success",
   Dinner: "text-danger",
   Snack: "text-warning",
 };
+
+const SOURCE_STYLES: Record<MealLogSource, string> = {
+  curated: "bg-brand-softer text-brand-strong border-brand-strong dark:bg-brand-soft dark:text-brand",
+  "open-food-facts": "bg-success-soft text-success-strong border-success dark:text-success",
+  gemini: "bg-warning-soft text-warning-strong border-warning dark:text-warning",
+};
+
+const HOURS = Array.from({ length: 17 }, (_, index) => index + 6);
+
+function sourceFromFood(food: NutritionFood): MealLogSource {
+  return food.source === "open-food-facts" ? "open-food-facts" : "curated";
+}
+
+function LogCard({ log, onDelete, onDragStart }: {
+  log: MealLog;
+  onDelete: (id: string) => void;
+  onDragStart: (id: string) => void;
+}) {
+  return (
+    <div
+      draggable
+      onDragStart={() => onDragStart(log.id)}
+      className="flex justify-between items-center gap-3 p-4 bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 shadow-xs hover:shadow-sm hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all group rounded-none animate-fade-in cursor-grab active:cursor-grabbing"
+    >
+      <div className="flex items-start gap-3 min-w-0">
+        <GripVertical className="h-4 w-4 mt-0.5 text-zinc-400 shrink-0" />
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-extrabold text-sm text-black dark:text-white truncate">{log.name}</p>
+            <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 border ${SOURCE_STYLES[log.source]}`}>
+              {log.sourceLabel}
+            </span>
+          </div>
+          <p className="text-[10px] text-zinc-500 font-medium mt-0.5">
+            {formatMealTime(log.consumedAt)} · {log.quantity}x ({log.servingLabel}) · P: {Math.round(log.protein * log.quantity)}g | C: {Math.round(log.carbs * log.quantity)}g | F: {Math.round(log.fat * log.quantity)}g
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-4 shrink-0">
+        <span className="text-sm font-black font-mono text-black dark:text-white">{Math.round(log.calories * log.quantity)} kcal</span>
+        <button
+          onClick={() => onDelete(log.id)}
+          className="text-zinc-400 hover:text-danger hover:border-danger border border-transparent p-1 transition-all rounded-none cursor-pointer"
+          aria-label={`Delete ${log.name}`}
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
@@ -78,21 +126,24 @@ export default function Dashboard() {
   const carbsGoal = 250;
   const fatGoal = 65;
 
-  const [logs, setLogs] = useState<MealLog[]>(INITIAL_LOGS);
+  const [logs, setLogs] = useState<MealLog[]>([]);
+  const [logView, setLogView] = useState<"board" | "timeline">("board");
+  const [draggingLogId, setDraggingLogId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<NutritionFood[]>([]);
   const [selectedFood, setSelectedFood] = useState<NutritionFood | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedMealType, setSelectedMealType] = useState<"Breakfast" | "Lunch" | "Dinner" | "Snack">("Breakfast");
+  const [selectedLogTime, setSelectedLogTime] = useState<"now" | MealCategory>("now");
   const [quantity, setQuantity] = useState(1);
 
   const [aiInput, setAiInput] = useState("");
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [aiResult, setAiResult] = useState<AiResult | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{ sender: "user" | "ai"; text: string }>>([
-    { sender: "ai", text: "Namaste! 🙏 I'm your DietDost. Ask me anything about Indian food swaps, recipes, or daily macros." }
+    { sender: "ai", text: "Namaste! I'm your DietDost. Ask me anything about Indian food swaps, recipes, or daily macros." },
   ]);
   const [chatInput, setChatInput] = useState("");
 
@@ -100,21 +151,21 @@ export default function Dashboard() {
     setMounted(true);
     const user = getUser();
     if (user?.calorieGoal) setCalorieGoal(user.calorieGoal);
-    try {
-      const rawLogs = window.localStorage.getItem(LOG_STORAGE_KEY);
-      if (rawLogs) setLogs(JSON.parse(rawLogs) as MealLog[]);
-    } catch {
-      setLogs(INITIAL_LOGS);
-    }
+    setLogs(readMealLogs());
   }, []);
 
   useEffect(() => {
-    if (mounted) window.localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(logs));
+    if (mounted) writeMealLogs(logs);
   }, [logs, mounted]);
 
   useEffect(() => {
     const query = searchQuery.trim();
-    if (!query) { setSearchResults([]); setIsSearching(false); return; }
+    if (!query) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
     const controller = new AbortController();
     const timeout = window.setTimeout(async () => {
       setIsSearching(true);
@@ -128,35 +179,69 @@ export default function Dashboard() {
         if (!controller.signal.aborted) setIsSearching(false);
       }
     }, 500);
-    return () => { window.clearTimeout(timeout); controller.abort(); };
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
   }, [searchQuery]);
 
-  const totals = useMemo(() => logs.reduce((acc, log) => {
+  const sortedLogs = useMemo(() => sortMealLogs(logs), [logs]);
+  const totals = useMemo(() => sortedLogs.reduce((acc, log) => {
     const m = log.quantity;
-    return { calories: acc.calories + log.calories * m, protein: acc.protein + log.protein * m, carbs: acc.carbs + log.carbs * m, fat: acc.fat + log.fat * m };
-  }, { calories: 0, protein: 0, carbs: 0, fat: 0 }), [logs]);
+    return {
+      calories: acc.calories + log.calories * m,
+      protein: acc.protein + log.protein * m,
+      carbs: acc.carbs + log.carbs * m,
+      fat: acc.fat + log.fat * m,
+    };
+  }, { calories: 0, protein: 0, carbs: 0, fat: 0 }), [sortedLogs]);
 
   const caloriesRemaining = Math.max(0, calorieGoal - totals.calories);
   const caloriePercent = Math.min(100, (totals.calories / calorieGoal) * 100);
   const isOverGoal = totals.calories > calorieGoal;
 
+  const refreshLogs = (next: MealLog[]) => setLogs(sortMealLogs(next));
+
   const handleAddLog = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFood) return;
-    setLogs([...logs, {
-      id: Date.now().toString(), name: selectedFood.name, category: selectedMealType,
-      calories: selectedFood.calories, protein: selectedFood.protein, carbs: selectedFood.carbs,
-      fat: selectedFood.fat, quantity, servingLabel: selectedFood.servingLabel,
+
+    const source = sourceFromFood(selectedFood);
+    const next = appendMealLogs([{
+      name: selectedFood.name,
+      calories: selectedFood.calories,
+      protein: selectedFood.protein,
+      carbs: selectedFood.carbs,
+      fat: selectedFood.fat,
+      quantity,
+      servingLabel: selectedFood.servingLabel,
+      consumedAt: selectedLogTime === "now" ? new Date().toISOString() : consumedAtForMeal(selectedLogTime),
+      source,
+      sourceLabel: SOURCE_LABELS[source],
     }]);
-    setSearchQuery(""); setSearchResults([]); setSelectedFood(null); setQuantity(1);
+
+    refreshLogs(next);
+    setSearchQuery("");
+    setSearchResults([]);
+    setSelectedFood(null);
+    setQuantity(1);
+    setSelectedLogTime("now");
   };
 
-  const handleDeleteLog = (id: string) => setLogs(logs.filter(l => l.id !== id));
+  const handleDeleteLog = (id: string) => refreshLogs(logs.filter((log) => log.id !== id));
+
+  const moveLogTo = (id: string | null, consumedAt: string) => {
+    if (!id) return;
+    refreshLogs(replaceMealLog(logs, id, { consumedAt }));
+    setDraggingLogId(null);
+  };
 
   const handleAiAnalyse = async () => {
     if (aiInput.trim() === "") return;
     setIsAnalysing(true);
     setAiResult(null);
+    setAiError(null);
     try {
       const res = await fetch("/api/ai/analyse", {
         method: "POST",
@@ -172,18 +257,15 @@ export default function Dashboard() {
         error?: string;
       };
       if (!res.ok || data.error) throw new Error(data.error || "Analysis failed");
-      // Map the API response shape to our internal AiResult shape
       setAiResult({
-        dishes: data.dishes.map(d => ({ ...d, quantity: 1 })),
+        dishes: data.dishes.map((dish) => ({ ...dish, quantity: 1 })),
         calories: data.total_calories,
         protein: data.total_protein,
         carbs: data.total_carbs,
         fat: data.total_fat,
       });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "AI analysis failed";
-      // Show error as a temporary AI result with an error note
-      console.error("[Dashboard AI Analyse]:", msg);
+      setAiError(err instanceof Error ? err.message : "AI analysis failed");
     } finally {
       setIsAnalysing(false);
     }
@@ -191,19 +273,28 @@ export default function Dashboard() {
 
   const handleAddAiLogs = () => {
     if (!aiResult) return;
-    setLogs([...logs, ...aiResult.dishes.map((dish, i) => ({
-      id: `${Date.now()}-${i}`, name: dish.name, category: "Breakfast" as const,
-      calories: dish.calories, protein: dish.protein, carbs: dish.carbs,
-      fat: dish.fat, quantity: dish.quantity, servingLabel: dish.servingLabel
-    }))]);
-    setAiResult(null); setAiInput("");
+    const now = new Date().toISOString();
+    const next = appendMealLogs(aiResult.dishes.map((dish) => ({
+      name: dish.name,
+      calories: dish.calories,
+      protein: dish.protein,
+      carbs: dish.carbs,
+      fat: dish.fat,
+      quantity: dish.quantity,
+      servingLabel: dish.servingLabel,
+      consumedAt: now,
+      source: "gemini",
+    })));
+    refreshLogs(next);
+    setAiResult(null);
+    setAiInput("");
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (chatInput.trim() === "") return;
     const userMsg = chatInput.trim();
-    setChatMessages(prev => [...prev, { sender: "user", text: userMsg }]);
+    setChatMessages((prev) => [...prev, { sender: "user", text: userMsg }]);
     setChatInput("");
     try {
       const res = await fetch("/api/ai/chat", {
@@ -213,10 +304,10 @@ export default function Dashboard() {
       });
       const data = await res.json() as { reply?: string; error?: string };
       if (!res.ok || data.error) throw new Error(data.error || "Chat failed");
-      setChatMessages(prev => [...prev, { sender: "ai", text: data.reply ?? "" }]);
+      setChatMessages((prev) => [...prev, { sender: "ai", text: data.reply ?? "" }]);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Something went wrong.";
-      setChatMessages(prev => [...prev, { sender: "ai", text: `⚠️ ${msg}` }]);
+      setChatMessages((prev) => [...prev, { sender: "ai", text: `Warning: ${msg}` }]);
     }
   };
 
@@ -236,22 +327,20 @@ export default function Dashboard() {
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 md:px-8 pt-24 md:pt-28 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-
-        {/* ── LEFT COLUMN ── */}
         <div className="lg:col-span-8 flex flex-col gap-8">
-
-          {/* Calorie Ring + Macro Bars */}
           <div className="bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 shadow-md p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center justify-between rounded-none animate-fade-in">
-            {/* Ring */}
             <div className="flex flex-col items-center gap-3 shrink-0">
               <p className="text-xs font-black text-black dark:text-zinc-300 uppercase tracking-widest">Today&rsquo;s Energy</p>
               <div className="relative w-44 h-44 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90">
                   <circle cx="88" cy="88" r="76" stroke={isOverGoal ? "#E63946" : "#E5E7EB"} strokeWidth="12" fill="transparent" />
                   <circle
-                    cx="88" cy="88" r="76"
+                    cx="88"
+                    cy="88"
+                    r="76"
                     stroke={isOverGoal ? "#E63946" : "#FFDB33"}
-                    strokeWidth="12" fill="transparent"
+                    strokeWidth="12"
+                    fill="transparent"
                     strokeDasharray={2 * Math.PI * 76}
                     strokeDashoffset={2 * Math.PI * 76 * (1 - caloriePercent / 100)}
                     strokeLinecap="butt"
@@ -265,11 +354,10 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className={`text-center text-xs font-bold px-3 py-1 border-2 border-black ${isOverGoal ? "bg-danger text-white" : "bg-brand-softer text-brand-strong"}`}>
-                {isOverGoal ? `⚠ Goal exceeded!` : `${caloriesRemaining} kcal remaining`}
+                {isOverGoal ? "Goal exceeded" : `${caloriesRemaining} kcal remaining`}
               </div>
             </div>
 
-            {/* Macro bars */}
             <div className="flex-1 w-full flex flex-col gap-5 justify-center">
               <h3 className="text-xs font-black text-black dark:text-zinc-300 uppercase tracking-widest text-center md:text-left">Macronutrient Status</h3>
               {[
@@ -293,9 +381,11 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Food Search */}
           <div className="flex flex-col gap-3 relative">
-            <h3 className="text-lg font-black text-black dark:text-white uppercase tracking-wide">Search Indian Foods</h3>
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2">
+              <h3 className="text-lg font-black text-black dark:text-white uppercase tracking-wide">Search Indian Foods</h3>
+              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Database items use curated and Open Food Facts nutrition data.</p>
+            </div>
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500" />
               <input
@@ -309,37 +399,40 @@ export default function Dashboard() {
 
             {isSearching && (
               <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-                {[1,2,3].map(i => <div key={i} className="skeleton-brutal h-14" />)}
+                {[1, 2, 3].map((i) => <div key={i} className="skeleton-brutal h-14" />)}
               </div>
             )}
 
             {!isSearching && searchResults.length > 0 && (
-              <div className="absolute top-[100px] left-0 right-0 max-h-64 overflow-y-auto bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 shadow-lg z-40 flex flex-col rounded-none animate-fade-in">
-                {searchResults.map((food) => (
-                  <button
-                    key={food.name}
-                    onClick={() => setSelectedFood(food)}
-                    className="flex justify-between items-center px-4 py-3 hover:bg-brand/10 dark:hover:bg-brand/5 transition-colors text-left w-full cursor-pointer border-b border-black/10 dark:border-zinc-700 last:border-0 group"
-                  >
-                    <div>
-                      <p className="font-bold text-sm text-black dark:text-zinc-200 group-hover:text-brand-strong dark:group-hover:text-brand">{food.name}</p>
-                      <p className="text-[10px] text-zinc-500 font-medium mt-0.5">
-                        Serving: {food.servingLabel} · {food.source === "open-food-facts" ? "Open Food Facts" : "Curated"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-mono font-bold text-zinc-600 dark:text-zinc-400">{food.calories} kcal</span>
-                      <div className="w-7 h-7 border-2 border-black bg-brand/10 flex items-center justify-center text-brand-strong group-hover:bg-brand group-hover:text-black transition-all rounded-none">
-                        <Plus className="h-4 w-4" />
+              <div className="absolute top-[108px] left-0 right-0 max-h-64 overflow-y-auto bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 shadow-lg z-40 flex flex-col rounded-none animate-fade-in">
+                {searchResults.map((food) => {
+                  const source = sourceFromFood(food);
+                  return (
+                    <button
+                      key={food.id}
+                      onClick={() => setSelectedFood(food)}
+                      className="flex justify-between items-center px-4 py-3 hover:bg-brand/10 dark:hover:bg-brand/5 transition-colors text-left w-full cursor-pointer border-b border-black/10 dark:border-zinc-700 last:border-0 group"
+                    >
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-bold text-sm text-black dark:text-zinc-200 group-hover:text-brand-strong dark:group-hover:text-brand">{food.name}</p>
+                          <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 border ${SOURCE_STYLES[source]}`}>{SOURCE_LABELS[source]}</span>
+                        </div>
+                        <p className="text-[10px] text-zinc-500 font-medium mt-0.5">Serving: {food.servingLabel}</p>
                       </div>
-                    </div>
-                  </button>
-                ))}
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-mono font-bold text-zinc-600 dark:text-zinc-400">{food.calories} kcal</span>
+                        <div className="w-7 h-7 border-2 border-black bg-brand/10 flex items-center justify-center text-brand-strong group-hover:bg-brand group-hover:text-black transition-all rounded-none">
+                          <Plus className="h-4 w-4" />
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
 
-          {/* Add Log Modal */}
           {selectedFood && (
             <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-fade-in">
               <div className="bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 shadow-xl max-w-md w-full p-6 relative animate-bounce-in rounded-none">
@@ -347,59 +440,74 @@ export default function Dashboard() {
                   <X className="h-4 w-4" />
                 </button>
                 <div className="inline-block bg-brand border-2 border-black px-2 py-0.5 text-xs font-black uppercase tracking-wider text-black mb-3">Add to Log</div>
-                <h3 className="text-xl font-black text-black dark:text-white mb-5">{selectedFood.name}</h3>
+                <h3 className="text-xl font-black text-black dark:text-white mb-2">{selectedFood.name}</h3>
+                <p className="text-[10px] text-zinc-500 font-bold mb-5">This will log at the current time. Drag it later to adjust when it was consumed.</p>
                 <form onSubmit={handleAddLog} className="flex flex-col gap-5">
-                  {/* Meal Type */}
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs font-black text-black dark:text-zinc-300 uppercase tracking-wider">Meal Category</label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {(["Breakfast","Lunch","Dinner","Snack"] as const).map((m) => (
-                        <button key={m} type="button" onClick={() => setSelectedMealType(m)}
+                    <label className="text-xs font-black text-black dark:text-zinc-300 uppercase tracking-wider">Consumed Time</label>
+                    <div className="grid grid-cols-5 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedLogTime("now")}
+                        className={`py-2 text-[11px] font-extrabold border-2 transition-all cursor-pointer rounded-none ${
+                          selectedLogTime === "now"
+                            ? "bg-black text-white dark:bg-white dark:text-black border-black dark:border-zinc-300 shadow-xs"
+                            : "bg-white dark:bg-zinc-900 border-black dark:border-zinc-300 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        }`}
+                      >
+                        Now
+                      </button>
+                      {MEAL_CATEGORIES.map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setSelectedLogTime(m)}
                           className={`py-2 text-[11px] font-extrabold border-2 transition-all cursor-pointer rounded-none ${
-                            selectedMealType === m
+                            selectedLogTime === m
                               ? `${CATEGORY_COLORS[m]} shadow-xs`
                               : "bg-white dark:bg-zinc-900 border-black dark:border-zinc-300 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                          }`}>
+                          }`}
+                        >
                           {m}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Quantity */}
                   <div className="flex flex-col gap-2">
                     <div className="flex justify-between items-center text-xs font-black uppercase tracking-wider text-black dark:text-zinc-300">
                       <span>Quantity</span>
                       <span className="font-mono text-brand-strong dark:text-brand">{quantity}x ({selectedFood.servingLabel})</span>
                     </div>
-                    <input type="range" min="0.5" max="4" step="0.5" value={quantity}
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="4"
+                      step="0.5"
+                      value={quantity}
                       onChange={(e) => setQuantity(parseFloat(e.target.value))}
-                      className="w-full accent-brand bg-zinc-200 dark:bg-zinc-700 h-2 outline-none cursor-pointer" />
-                    <div className="flex justify-between text-[10px] text-zinc-500 font-bold px-0.5">
-                      {["0.5x","1.0x","2.0x","3.0x","4.0x"].map(s => <span key={s}>{s}</span>)}
-                    </div>
+                      className="w-full accent-brand bg-zinc-200 dark:bg-zinc-700 h-2 outline-none cursor-pointer"
+                    />
                   </div>
 
-                  {/* Nutrition Preview */}
                   <div className="p-4 bg-brand-softer border-2 border-brand-strong dark:border-brand rounded-none">
-                    <p className="text-xs text-brand-strong font-black uppercase tracking-wider mb-3">Estimated Nutrients</p>
+                    <p className="text-xs text-brand-strong dark:text-brand font-black uppercase tracking-wider mb-3">Estimated Nutrients</p>
                     <div className="grid grid-cols-4 gap-2 text-center">
                       {[
                         { label: "Calories", val: `${Math.round(selectedFood.calories * quantity)} kcal`, cls: "text-black dark:text-white" },
-                        { label: "Protein", val: `${Math.round(selectedFood.protein * quantity)}g`, cls: "text-brand-strong" },
+                        { label: "Protein", val: `${Math.round(selectedFood.protein * quantity)}g`, cls: "text-brand-strong dark:text-brand" },
                         { label: "Carbs", val: `${Math.round(selectedFood.carbs * quantity)}g`, cls: "text-black dark:text-zinc-300" },
                         { label: "Fats", val: `${Math.round(selectedFood.fat * quantity)}g`, cls: "text-danger" },
                       ].map(({ label, val, cls }) => (
                         <div key={label}>
-                          <p className="text-[10px] text-zinc-600 font-bold">{label}</p>
+                          <p className="text-[10px] text-zinc-600 dark:text-zinc-400 font-bold">{label}</p>
                           <p className={`text-sm font-black font-mono mt-0.5 ${cls}`}>{val}</p>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <button type="submit"
-                    className="w-full py-3 bg-brand hover:bg-brand-strong text-black font-extrabold border-2 border-black shadow-sm hover:shadow-md active:shadow-2xs hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 rounded-none transition-all cursor-pointer">
+                  <button type="submit" className="w-full py-3 bg-brand hover:bg-brand-strong text-black font-extrabold border-2 border-black shadow-sm hover:shadow-md active:shadow-2xs hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 rounded-none transition-all cursor-pointer">
                     Confirm & Add to Log
                   </button>
                 </form>
@@ -407,61 +515,95 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Today's Logs */}
           <div className="flex flex-col gap-4 text-left animate-fade-in" style={{ animationDelay: "0.1s" }}>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-black text-black dark:text-white uppercase tracking-wide">Today&rsquo;s Food Logs</h3>
-              <span className="text-xs font-bold text-zinc-500">{logs.length} items · {Math.round(totals.calories)} kcal total</span>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-black text-black dark:text-white uppercase tracking-wide">Today&rsquo;s Food Logs</h3>
+                <span className="text-xs font-bold text-zinc-500">{sortedLogs.length} items · {Math.round(totals.calories)} kcal total · sorted by consumed time</span>
+              </div>
+              <div className="flex border-2 border-black dark:border-zinc-300 shadow-xs w-fit">
+                {[
+                  { id: "board", label: "Meal Board", Icon: LayoutGrid },
+                  { id: "timeline", label: "Timeline", Icon: CalendarClock },
+                ].map(({ id, label, Icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => setLogView(id as "board" | "timeline")}
+                    className={`flex items-center gap-2 px-3 py-2 text-[11px] font-black border-r-2 last:border-r-0 border-black dark:border-zinc-300 ${
+                      logView === id ? "bg-brand text-black" : "bg-white dark:bg-zinc-900 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-col gap-5">
-              {(["Breakfast","Lunch","Dinner","Snack"] as const).map((category) => {
-                const categoryLogs = logs.filter(l => l.category === category);
-                const catTotal = categoryLogs.reduce((a, l) => a + l.calories * l.quantity, 0);
-                return (
-                  <div key={category} className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className={`px-2 py-0.5 border-2 border-black text-[10px] font-black uppercase tracking-wider ${CATEGORY_COLORS[category]}`}>{category}</div>
-                      {catTotal > 0 && <span className={`text-xs font-bold ${CATEGORY_ACCENT[category]}`}>{Math.round(catTotal)} kcal</span>}
+
+            {logView === "board" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {MEAL_CATEGORIES.map((category) => {
+                  const categoryLogs = sortedLogs.filter((log) => getMealCategory(log.consumedAt) === category);
+                  const catTotal = categoryLogs.reduce((a, l) => a + l.calories * l.quantity, 0);
+                  return (
+                    <div
+                      key={category}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => moveLogTo(draggingLogId, consumedAtForMeal(category))}
+                      className="flex flex-col gap-2 min-h-40 p-3 border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-950/40"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className={`px-2 py-0.5 border-2 border-black text-[10px] font-black uppercase tracking-wider ${CATEGORY_COLORS[category]}`}>{category}</div>
+                        {catTotal > 0 && <span className={`text-xs font-bold ${CATEGORY_ACCENT[category]}`}>{Math.round(catTotal)} kcal</span>}
+                      </div>
+                      {categoryLogs.length === 0 ? (
+                        <div className="flex-1 min-h-20 p-4 border-2 border-dashed border-zinc-300 dark:border-zinc-700 text-center text-xs text-zinc-500 font-bold flex items-center justify-center">
+                          Drop items here for {category.toLowerCase()}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          {categoryLogs.map((log) => (
+                            <LogCard key={log.id} log={log} onDelete={handleDeleteLog} onDragStart={setDraggingLogId} />
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    {categoryLogs.length === 0 ? (
-                      <div className="p-4 border-2 border-dashed border-zinc-300 dark:border-zinc-700 text-center text-xs text-zinc-500 font-bold">
-                        No items logged for {category.toLowerCase()}
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {HOURS.map((hour) => {
+                  const hourLogs = sortedLogs.filter((log) => new Date(log.consumedAt).getHours() === hour);
+                  return (
+                    <div
+                      key={hour}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => moveLogTo(draggingLogId, consumedAtForHour(hour))}
+                      className="grid grid-cols-[72px_1fr] gap-3 items-stretch"
+                    >
+                      <div className="border-2 border-black dark:border-zinc-600 bg-white dark:bg-zinc-900 p-3 flex items-center justify-center text-xs font-black font-mono">
+                        {hour % 12 || 12}:00 {hour < 12 ? "AM" : "PM"}
                       </div>
-                    ) : (
-                      <div className="flex flex-col gap-2">
-                        {categoryLogs.map((log) => (
-                          <div key={log.id}
-                            className="flex justify-between items-center p-4 bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 shadow-xs hover:shadow-sm hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all group rounded-none animate-fade-in">
-                            <div className="flex-1">
-                              <p className="font-extrabold text-sm text-black dark:text-white">{log.name}</p>
-                              <p className="text-[10px] text-zinc-500 font-medium mt-0.5">
-                                {log.quantity}x ({log.servingLabel}) &middot; P: {Math.round(log.protein * log.quantity)}g | C: {Math.round(log.carbs * log.quantity)}g | F: {Math.round(log.fat * log.quantity)}g
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <span className="text-sm font-black font-mono text-black dark:text-white">{Math.round(log.calories * log.quantity)} kcal</span>
-                              <button onClick={() => handleDeleteLog(log.id)}
-                                className="text-zinc-400 hover:text-danger hover:border-danger border border-transparent p-1 transition-all rounded-none cursor-pointer">
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
+                      <div className="min-h-20 border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/60 dark:bg-zinc-950/40 p-2 flex flex-col gap-2">
+                        {hourLogs.length === 0 ? (
+                          <div className="h-full min-h-14 flex items-center justify-center text-[11px] text-zinc-500 font-bold">
+                            Drop food here
                           </div>
-                        ))}
+                        ) : (
+                          hourLogs.map((log) => <LogCard key={log.id} log={log} onDelete={handleDeleteLog} onDragStart={setDraggingLogId} />)
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* ── RIGHT COLUMN ── */}
         <div className="lg:col-span-4 flex flex-col gap-6">
-
-          {/* AI Meal Analyser */}
           <div className="bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 shadow-md p-6 flex flex-col gap-4 relative overflow-hidden animate-fade-in rounded-none" style={{ animationDelay: "0.15s" }}>
-            {/* Brand accent strip */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-brand" />
             <div className="flex items-center gap-3 mt-1">
               <div className="w-9 h-9 border-2 border-black bg-brand flex items-center justify-center text-black rounded-none">
@@ -469,7 +611,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="font-black text-base text-black dark:text-white leading-none">AI Meal Analyser</h3>
-                <p className="text-[10px] text-zinc-500 font-bold mt-0.5">Describe any Indian meal</p>
+                <p className="text-[10px] text-zinc-500 font-bold mt-0.5">Gemini parses messy meal text into estimates.</p>
               </div>
             </div>
 
@@ -496,6 +638,8 @@ export default function Dashboard() {
               )}
             </button>
 
+            {aiError && <p className="text-xs font-bold text-danger">{aiError}</p>}
+
             {aiResult && (
               <div className="mt-1 p-4 bg-brand-softer border-2 border-brand-strong flex flex-col gap-3 animate-slide-up rounded-none">
                 <div className="flex justify-between items-center text-xs border-b-2 border-brand-strong/30 pb-2">
@@ -510,16 +654,17 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
-                <button onClick={handleAddAiLogs}
-                  className="w-full py-2 bg-brand-strong border-2 border-black text-black font-extrabold text-[11px] hover:bg-brand transition-all hover:shadow-xs cursor-pointer rounded-none">
+                <div className={`w-fit text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 border ${SOURCE_STYLES.gemini}`}>
+                  Gemini AI estimate
+                </div>
+                <button onClick={handleAddAiLogs} className="w-full py-2 bg-brand-strong border-2 border-black text-black font-extrabold text-[11px] hover:bg-brand transition-all hover:shadow-xs cursor-pointer rounded-none">
                   + Add all to Today&rsquo;s Log
                 </button>
               </div>
             )}
           </div>
 
-          {/* Diagnostics card */}
-          <div className="bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 shadow-md p-6 flex flex-col gap-4 animate-fade-in rounded-none" style={{ animationDelay: "0.2s" }}>
+          <div className="bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 shadow-md p-6 flex flex-col gap-4 animate-fade-in rounded-none relative overflow-hidden" style={{ animationDelay: "0.2s" }}>
             <div className="absolute top-0 left-0 right-0 h-1 bg-success" />
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 border-2 border-black bg-success/10 flex items-center justify-center text-success rounded-none">
@@ -531,7 +676,7 @@ export default function Dashboard() {
               {[
                 { label: "Target Diet Goal", val: "Weight Maintenance", valCls: "text-brand-strong dark:text-brand" },
                 { label: "TDEE Calculated", val: `${calorieGoal} kcal / day`, valCls: "text-black dark:text-white" },
-                { label: "Logged today", val: `${logs.length} items`, valCls: "text-success" },
+                { label: "Logged today", val: `${sortedLogs.length} items`, valCls: "text-success" },
                 { label: "Protein coverage", val: `${Math.round((totals.protein / proteinGoal) * 100)}%`, valCls: totals.protein >= proteinGoal ? "text-success" : "text-warning" },
               ].map(({ label, val, valCls }) => (
                 <div key={label} className="flex justify-between items-center p-2.5 bg-zinc-50 dark:bg-zinc-800 border-2 border-black dark:border-zinc-600">
@@ -542,7 +687,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Chat button */}
           <button
             onClick={() => setIsChatOpen(true)}
             className="flex items-center justify-center gap-3 w-full py-4 bg-black dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 border-2 border-black dark:border-white text-white dark:text-black font-extrabold shadow-md hover:shadow-lg active:shadow-xs hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 rounded-none transition-all cursor-pointer animate-pulse-brand"
@@ -553,7 +697,6 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* ── CHATBOT DRAWER ── */}
       {isChatOpen && (
         <div className="fixed inset-0 bg-black/70 z-50 flex justify-end animate-fade-in">
           <div className="w-full max-w-md h-full bg-white dark:bg-zinc-950 border-l-2 border-black dark:border-zinc-300 flex flex-col shadow-xl animate-slide-in-right">
@@ -594,8 +737,7 @@ export default function Dashboard() {
                 onChange={(e) => setChatInput(e.target.value)}
                 className="flex-1 px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border-2 border-black dark:border-zinc-300 focus:border-brand shadow-xs focus:shadow-sm rounded-none text-xs transition-all outline-none text-black dark:text-white placeholder:text-zinc-500"
               />
-              <button type="submit"
-                className="px-4 py-3 bg-brand hover:bg-brand-strong text-black font-extrabold border-2 border-black shadow-xs hover:shadow-sm active:shadow-2xs hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 rounded-none text-xs transition-all cursor-pointer">
+              <button type="submit" className="px-4 py-3 bg-brand hover:bg-brand-strong text-black font-extrabold border-2 border-black shadow-xs hover:shadow-sm active:shadow-2xs hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 rounded-none text-xs transition-all cursor-pointer">
                 <Send className="h-4 w-4" />
               </button>
             </form>

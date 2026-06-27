@@ -53,44 +53,44 @@
 
 .dark {
   color-scheme: dark;
-  --background: 0 0% 7%;
-  --foreground: 0 0% 96%;
-  --card: 0 0% 11%;
-  --card-foreground: 0 0% 96%;
-  --popover: 0 0% 11%;
-  --popover-foreground: 0 0% 96%;
-  --primary: 50 100% 60%;
+  --background: 252 34% 8%;
+  --foreground: 48 100% 96%;
+  --card: 254 30% 13%;
+  --card-foreground: 48 100% 96%;
+  --popover: 254 30% 13%;
+  --popover-foreground: 48 100% 96%;
+  --primary: 48 100% 62%;
   --primary-foreground: 0 0% 0%;
-  --secondary: 0 0% 15%;
-  --secondary-foreground: 0 0% 96%;
-  --muted: 0 0% 18%;
-  --muted-foreground: 0 0% 68%;
-  --accent: 174 72% 56%;
+  --secondary: 260 26% 18%;
+  --secondary-foreground: 48 100% 96%;
+  --muted: 260 20% 20%;
+  --muted-foreground: 48 22% 72%;
+  --accent: 178 92% 52%;
   --accent-foreground: 0 0% 0%;
-  --destructive: 355 78% 62%;
+  --destructive: 352 88% 62%;
   --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 23%;
-  --input: 0 0% 23%;
-  --ring: 50 100% 60%;
-  --color-border-default: #3A3A3A;
+  --border: 48 42% 78%;
+  --input: 48 42% 78%;
+  --ring: 48 100% 62%;
+  --color-border-default: #F8EFC2;
 
   /* Neobrutalist Custom Variables (Dark Mode) */
-  --brand: #FFDB33;
-  --brand-strong: #FFE066;
-  --brand-soft: #4D3F00;
-  --brand-softer: #332A00;
+  --brand: #FFE45E;
+  --brand-strong: #FFD000;
+  --brand-soft: #5B4800;
+  --brand-softer: #2E2606;
 
-  --success: #22C55E;
-  --success-strong: #16A34A;
-  --success-soft: #052E16;
+  --success: #35F27D;
+  --success-strong: #7CFFAB;
+  --success-soft: #063B22;
 
-  --danger: #E63946;
-  --danger-strong: #EF4444;
-  --danger-soft: #450A0A;
+  --danger: #FF4D6D;
+  --danger-strong: #FF8AA0;
+  --danger-soft: #4A0718;
 
-  --warning: #F59E0B;
-  --warning-strong: #D97706;
-  --warning-soft: #78350F;
+  --warning: #FFB020;
+  --warning-strong: #FFD166;
+  --warning-soft: #4A2B00;
 }
 
 * {
