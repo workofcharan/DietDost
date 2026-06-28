@@ -262,7 +262,7 @@ export default function Home() {
                   </div>
                   <span className="font-mono text-xs font-black text-zinc-500">0{index + 1}</span>
                 </div>
-                <h2 className="text-xl font-black">{step.title}</h2>
+                <h3 className="text-xl font-black">{step.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{step.text}</p>
               </motion.div>
             );
